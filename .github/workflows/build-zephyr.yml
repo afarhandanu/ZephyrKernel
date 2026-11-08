@@ -509,3 +509,15 @@ jobs:
             --title "$TITLE" \
             --notes-file release_notes.md \
             --latest
+
+      - name: Push Release & Flashable ZIPs to Telegram
+        if: ${{ env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != '' }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RELEASE_URL: https://github.com/${{ github.repository }}/releases/tag/v6.1-${{ needs.setup-matrix.outputs.build_date }}-${{ inputs.root_variant }}-${{ inputs.lto_mode }}LTO
+          KERNEL_VER: "6.1.187"
+          LTO_MODE: ${{ inputs.lto_mode }}
+          VARIANTS: ${{ inputs.root_variant }}
+        run: |
+          python3 scripts/telegram_notify.py
