@@ -37,34 +37,49 @@ caption_html = f"""<b>⚡ Zephyr Protocol | {KERNEL_VER}</b>
 <blockquote><b>GKI Kernel | Android 14 | Linux 6.1.x</b></blockquote>
 
 <blockquote expandable><b>^ What's Inside?</b>
-<b>🛡️ Root & Stealth Integration</b>
-• Multi-Variant (FinaSU / KSU-Next / SukiSU / KSU / Vanilla)
+<b>📁 Filesystem</b>
+• Mountify / OverlayFS
+• F2FS Extended Attributes
+• POSIX ACL
+
+<b>🧠 Memory</b>
+• ZRAM (LZ4 v1.10.0 NEON + LZ4KD)
+• ZSTD v1.5.7 (Linux 6.15 backport)
+• Memory Tracking
+• Writeback Support
+
+<b>🔥 CPU & Scheduler</b>
+• Ondemand Governor (included)
+• Frame Warning Disabled
+• I/O Scheduler (MQ-Deadline, Kyber)
+
+<b>🌐 Network</b>
+• TCP Congestion Control: BBRv3, BBR, BIC, CUBIC, Westwood, HTCP
+• Network Schedulers: FQ, FQ_CoDel, CAKE, PIE, FQ-PIE
+• IP Set
+• IPv6 NAT
+• TTL Target (Netfilter) / HL Mangling
+
+<b>🛠️ Debug & Core</b>
+• Full Kallsyms
+• UBSAN Disabled (KMI Safe)
+• Page Owner Disabled
+• RCU Trace Disabled
+
+<b>⚡ Zephyr & Luminaire Tuning</b>
+• BORE v6.8.0-rc1 (sched_bore=1)
+• le9uo v1.15 Working Set Protection (MGLRU Off)
+• Kcompressd v0.5 background daemon
+• Workqueue Catch-up & Schedutil Catch-up
+• UFS WriteBooster Catch-up
+• Re:Kernel (Port 22 Netlink Server)
+• NTSYNC (/dev/ntsync) Winlator / Wine
+• Droidspaces / SYSVIPC (KABI safe)
+• BBG (Baseband Security Guard)
+• WireGuard VPN
+• Full Gamepad FF (DualSense PS5 / DS4 / Xbox)
 • SUSFS v2.3.0 Built-in (11 stealth features)
 • Module CRC bypass & GKI symbol unlock (WiFi/BT 100% fix)
-
-<b>🔥 CPU, Scheduler & Toolchain</b>
-• BORE CPU Scheduler v6.8.0-rc1 (sched_bore=1)
-• Schedutil Catch-up & Workqueue Catch-up
-• Neutron Clang 24.0.0git + LLD 24.0.0 (ccache)
-• ThinLTO / FullLTO / NoLTO selectable
-
-<b>🧠 Memory & Compression Architecture</b>
-• le9uo v1.15 Working Set Protection (MGLRU Off)
-• LZ4 v1.10.0 (ARM64 NEON) + ZSTD v1.5.7 (Linux 6.15)
-• ZRAM LZ4KD + Kcompressd v0.5 daemon
-• UFS WriteBooster Catch-up
-
-<b>🎮 Gaming, Emulation & Hardware</b>
-• NTSYNC (/dev/ntsync) Winlator / Wine / Mobox
-• Re:Kernel (Port 22 Netlink Server)
-• Droidspaces / SYSVIPC (KABI task_struct safe)
-• Baseband Security Guard (BBG)
-• Full Gamepad FF (DualSense PS5 / DS4 / Xbox)
-
-<b>🌐 Network & Tethering</b>
-• TCP BBRv3 + Delayed Boot Enforcer
-• CAKE Queue Discipline (Anti-Bufferbloat)
-• TTL / HL Target Mangling (Hotspot Quota Bypass)
 </blockquote>
 
 <b>📋 Build Information:</b>
