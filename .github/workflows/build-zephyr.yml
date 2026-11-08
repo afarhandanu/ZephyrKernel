@@ -8,7 +8,7 @@ on:
         required: true
         default: "ZephyrKernel"
       integrate_finasu:
-        description: "Integrate FinaSU root"
+        description: "Integrate FinaSU root & SUSFS"
         type: boolean
         required: true
         default: true
@@ -32,20 +32,42 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential bc bison flex libssl-dev libelf-dev \
-            zip curl git ccache python3
+            zip curl git ccache python3 patch
 
       - name: Clone Luminaire Kernel Source Tree
         run: |
           echo "Cloning Luminaire Kernel base (branch: android14-6.1-luminaire)..."
           git clone --depth=1 -b android14-6.1-luminaire https://github.com/chainonyourdoor/LuminaireKernel-6.1.git kernel
 
-      - name: Integrate FinaSU Root
+      - name: Integrate FinaSU Root & SUSFS Patches
         if: ${{ inputs.integrate_finasu }}
         run: |
+          echo "Cloning susfs4ksu (branch: gki-android14-6.1)..."
+          git clone --depth=1 -b gki-android14-6.1 https://gitlab.com/simonpunk/susfs4ksu.git susfs
+          cp -r susfs/kernel_patches/fs/* kernel/fs/ 2>/dev/null || true
+          cp -r susfs/kernel_patches/include/linux/* kernel/include/linux/ 2>/dev/null || true
+
           cd kernel
+          echo "Patching SUSFS into kernel tree..."
+          patch -p1 < ../susfs/kernel_patches/50_add_susfs_in_gki-android14-6.1.patch || true
+
           echo "Setting up FinaSU..."
           curl -LSs "https://raw.githubusercontent.com/LyraVoid/FinaSU/master/kernel/setup.sh" | bash -s master
-          echo "FinaSU setup complete."
+          
+          echo "Enabling FinaSU & SUSFS in gki_defconfig..."
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_HOOK_TRACEPOINT
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_DYNAMIC_MANAGER
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_PATH
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_MOUNT
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_KSTAT
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SPOOF_UNAME
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_ENABLE_LOG
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_OPEN_REDIRECT
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_MAP
 
       - name: Setup Custom Branding (ZephyrKernel)
         run: |
