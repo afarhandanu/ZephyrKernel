@@ -21,7 +21,7 @@
 
 ### 🔥 CPU, Scheduler, & Toolchain
 - **BORE CPU Scheduler (`v6.8.0-rc1`):** *Burst-Oriented Response Enhancer* (`kernel.sched_bore = 1`) for ultra-responsive UI rendering, low touch latency, and smooth multitasking under heavy load.
-- **Neutron Clang `24.0.0git` + LLD `24.0.0`:** Compiled with **Clang ThinLTO (`CONFIG_LTO_CLANG_THIN=y`)** and **Clang Control Flow Integrity (`CONFIG_CFI_CLANG=y`)**.
+- **Neutron Clang `24.0.0git` + LLD `24.0.0`:** Configurable Link-Time Optimization supporting **ThinLTO (`CONFIG_LTO_CLANG_THIN=y`)**, **FullLTO (`CONFIG_LTO_CLANG_FULL=y`)**, or **NoLTO (`CONFIG_LTO_NONE=y`)**, paired with **Clang Control Flow Integrity (`CONFIG_CFI_CLANG=y`)** and persistent **`ccache`** compiler caching.
 - **Mainline Catch-up Backports:** Includes `schedutil_catchup`, `workqueue_catchup`, and `ufs_writebooster_catchup` for optimal frequency scaling and UFS storage throughput.
 
 ### 🧠 Memory & Compression Architecture
@@ -41,9 +41,14 @@
 - **Full Gamepad + Force Feedback Support:** Built-in drivers with vibration support for **PlayStation 5 DualSense (`HID_PLAYSTATION` + `PLAYSTATION_FF`)**, **PlayStation 4 DualShock 4 (`HID_SONY` + `SONY_FF`)**, and **Xbox Controllers (`JOYSTICK_XPAD` + `JOYSTICK_XPAD_FF`)**.
 - **Baseband Security Guard (`CONFIG_BBG=y`):** Linux Security Module protecting critical modem/IMEI partitions (`nvram`, `nvdata`, `persist`, `efs`) from unauthorized tampering.
 
-### 🛡️ Root & Stealth Integration
-- **FinaSU (`v1.5.0+`):** Next-generation kernel-based root with dual-slot signature verification (supports both official **FinaSU Manager** and **KernelSU Manager**).
-- **SUSFS (`v2.3.0 Built-in`):** Full built-in VFS root-hiding suite (`hide_mounts`, `avc_spoof`, `uname`, `cmdline`, `path`, `map`, `dynamic_kstat`, `full_clone`, `static_kstat`, `redirect`, `logging`).
+### 🛡️ Multi-Variant Root & Stealth Integration
+- **5 Selectable Root Variants (Single or Parallel `all` Matrix Build):**
+  - **FinaSU (`v1.5.0+`):** Next-generation kernel-based root with dual-slot signature verification (supports both official **FinaSU Manager** and **KernelSU Manager**).
+  - **KernelSU-Next (`dev-susfs`):** Feature-rich KernelSU fork by `KernelSU-Next` with native SUSFS integration.
+  - **SukiSU-Ultra (`builtin` + KPM):** Enhanced root solution with built-in **Kernel Patch Module (`CONFIG_KPM=y`)** support.
+  - **Official KernelSU (`tiann`):** Classic upstream KernelSU with full SUSFS patches.
+  - **Vanilla (`Non-Root`):** Clean, unrooted GKI 2.0 image without KernelSU or SUSFS (ideal for **Magisk**, **APatch**, or pure rootless setups).
+- **SUSFS (`v2.3.0 / v2.4.0 Built-in`):** Full built-in VFS root-hiding suite (`hide_mounts`, `avc_spoof`, `uname`, `cmdline`, `path`, `map`, `dynamic_kstat`, `full_clone`, `static_kstat`, `redirect`, `logging`) on all rooted variants.
 - **Full Vendor Module Compatibility:** Includes `check_version()` CRC bypass and GKI protected-exports bypass so all `/system_dlkm` and `/vendor_dlkm` modules (WiFi, Bluetooth, NFC, Camera, Audio SmartPA, GPU) load cleanly.
 
 ---
