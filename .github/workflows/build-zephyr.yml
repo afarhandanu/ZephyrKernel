@@ -116,6 +116,7 @@ jobs:
 
       - name: Clone Luminaire Kernel Source Tree
         run: |
+          rm -rf kernel
           echo "Cloning Luminaire Kernel base (branch: android14-6.1-luminaire)..."
           git clone --depth=1 -b android14-6.1-luminaire https://github.com/chainonyourdoor/LuminaireKernel-6.1.git kernel
 

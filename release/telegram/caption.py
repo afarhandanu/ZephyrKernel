@@ -5,7 +5,7 @@
 import json
 import os
 
-FEATURES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "kernel", "features.json")
+FEATURES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "features.json")
 
 with open(FEATURES_FILE) as handle:
     FEATURES = json.load(handle)
