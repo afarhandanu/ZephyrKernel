@@ -141,7 +141,7 @@ rich_markdown = f"""<tg-slideshow>
 <tg-button-row><tg-button type="url" style="primary" url="https://t.me/Sukiksu/7121/">SukiSU-Ultra · SuSFS v2.3.0</tg-button></tg-button-row>
 <tg-button-row><tg-button type="url" style="primary" url="https://t.me/KernelSU_group/3234/">KernelSU · SuSFS v2.3.0</tg-button></tg-button-row>
 <tg-button-row><tg-button type="url" style="primary" url="https://t.me/BakaSU_Grp/4/">BakaSU · SuSFS v2.3.0</tg-button></tg-button-row>
-<tg-button-row><tg-button type="url" style="primary" url="https://t.me/kowsu_build/">KowSU · LKM Root</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/kowsu_build/">KowSU · SuSFS v2.3.0</tg-button></tg-button-row>
 <tg-button-row><tg-button type="callback_data" data="vanilla" style="primary">Vanilla (Non-Root / Pure GKI)</tg-button></tg-button-row>
 
 <tg-button-row>

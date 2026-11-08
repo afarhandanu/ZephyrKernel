@@ -286,6 +286,7 @@ jobs:
           elif [ "$VARIANT" = "kowsu" ]; then
             curl -LSs "https://raw.githubusercontent.com/KOWX712/KernelSU/master/kernel/setup.sh" | bash -s master
             KSU_DIR="KernelSU"
+            curl -LSs "https://raw.githubusercontent.com/dikafarabian/workbench/main/kernel/ksu/susfs/patches/10_enable_susfs_for_kowsu.patch" | (cd "$KSU_DIR" && patch -p1 --fuzz=3 --forward) || true
 
           elif [ "$VARIANT" = "ksu" ]; then
             curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
@@ -293,26 +294,21 @@ jobs:
             (cd "$KSU_DIR" && patch -p1 --fuzz=3 --forward < ../../susfs/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch) || true
           fi
 
-          if [ "$VARIANT" != "kowsu" ]; then
-            python3 ../workbench/kernel/ksu/susfs/priority_uid_filter_compat.py "$KSU_DIR" include/linux/susfs.h fs/susfs.c || true
+          python3 ../workbench/kernel/ksu/susfs/priority_uid_filter_compat.py "$KSU_DIR" include/linux/susfs.h fs/susfs.c || true
 
-            echo "Enabling KSU & SUSFS in gki_defconfig..."
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_PATH
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_MOUNT
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_KSTAT
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SPOOF_UNAME
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_ENABLE_LOG
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_OPEN_REDIRECT
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_MAP
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_PRIORITY_UID_FILTER
-          else
-            echo "Enabling standalone KowSU (without SUSFS) in gki_defconfig..."
-            ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU -d KSU_SUSFS
-          fi
+          echo "Enabling KSU & SUSFS in gki_defconfig..."
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_PATH
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_MOUNT
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_KSTAT
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SPOOF_UNAME
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_ENABLE_LOG
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_OPEN_REDIRECT
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_MAP
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_PRIORITY_UID_FILTER
 
       - name: Disable KSU for Vanilla Variant
         if: matrix.variant == 'vanilla'
