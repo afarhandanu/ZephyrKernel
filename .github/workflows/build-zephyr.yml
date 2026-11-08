@@ -470,6 +470,9 @@ jobs:
     if: ${{ always() && !cancelled() && inputs.publish_release }}
     runs-on: ubuntu-24.04
     steps:
+      - name: Checkout ZephyrKernel Repository
+        uses: actions/checkout@v4
+
       - name: Download All Built Variant ZIPs
         uses: actions/download-artifact@v4
         with:
@@ -506,12 +509,13 @@ jobs:
           } > release_notes.md
 
           gh release create "$TAG" release_assets/*.zip \
+            --repo "${{ github.repository }}" \
             --title "$TITLE" \
             --notes-file release_notes.md \
             --latest
 
       - name: Push Release & Flashable ZIPs to Telegram
-        if: ${{ env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != '' }}
+        if: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
