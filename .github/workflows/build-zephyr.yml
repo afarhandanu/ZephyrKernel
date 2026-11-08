@@ -127,15 +127,30 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -d SLUB_DEBUG
           ./scripts/config --file arch/arm64/configs/gki_defconfig -d DEBUG_KMEMLEAK
 
-      - name: Setup Neutron Clang Toolchain
+      - name: Cache Neutron Clang Toolchain
+        id: cache-clang
+        uses: actions/cache@v4
+        with:
+          path: toolchain
+          key: neutron-clang-06092026-v1
+
+      - name: Setup Neutron Clang Toolchain (Direct CDN via GitHub API)
+        if: steps.cache-clang.outputs.cache-hit != 'true'
         run: |
           mkdir -p toolchain
           cd toolchain
-          echo "Downloading antman from raw GitHub with retry..."
-          curl -LSs --retry 5 "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman" -o antman
-          chmod +x antman
-          echo "Fetching Neutron Clang (latest)..."
-          ./antman -S
+          echo "Downloading Neutron Clang 24.0.0 directly via GitHub API CDN..."
+          curl -fSL --retry 5 --retry-delay 3 \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/octet-stream" \
+            "https://api.github.com/repos/Neutron-Toolchains/clang-build-catalogue/releases/assets/546798216" \
+            -o neutron-clang.tar.zst
+          echo "Extracting Neutron Clang..."
+          tar -I zstd -xf neutron-clang.tar.zst
+          rm -f neutron-clang.tar.zst
+
+      - name: Add Toolchain to PATH
+        run: |
           echo "${GITHUB_WORKSPACE}/toolchain/bin" >> $GITHUB_PATH
 
       - name: Compile GKI Kernel Image
