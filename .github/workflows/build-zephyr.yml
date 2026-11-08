@@ -58,6 +58,10 @@ jobs:
           echo "Patching SUSFS into kernel tree..."
           patch -p1 < ../susfs/kernel_patches/50_add_susfs_in_gki-android14-6.1.patch || true
 
+          # Fix unused function warnings under strict Clang Werror
+          sed -i 's/static struct cred \*susfs_switch_to_ksu_domain/static __maybe_unused struct cred \*susfs_switch_to_ksu_domain/' fs/susfs.c
+          sed -i 's/static void susfs_restore_creds/static __maybe_unused void susfs_restore_creds/' fs/susfs.c
+
           echo "Setting up FinaSU..."
           curl -LSs "https://raw.githubusercontent.com/LyraVoid/FinaSU/master/kernel/setup.sh" | bash -s master
           
@@ -75,6 +79,7 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_OPEN_REDIRECT
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_MAP
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_PRIORITY_UID_FILTER
 
       - name: Setup Custom Branding (ZephyrKernel)
         run: |
@@ -143,7 +148,7 @@ jobs:
           make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 gki_defconfig
           
           echo "Compiling Kernel Image..."
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 Image
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 KCFLAGS="-Wno-unused-function -Wno-error" Image
 
       - name: Package AnyKernel3 Flashable ZIP
         run: |
