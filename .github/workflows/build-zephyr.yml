@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       kernel_name:
-        description: "Branding / Kernel Name"
+        description: "Branding Suffix (e.g. Zephyr -> 6.1.187-android14-11-Zephyr)"
         required: true
-        default: "ZephyrKernel"
+        default: "Zephyr"
       lto_mode:
-        description: "LTO Optimization (none = cepat & stabil seperti HP kamu saat ini, thin = ThinLTO optimasi tinggi)"
+        description: "LTO Optimization (none = cepat & 100% identik KMI HP kamu, thin = ThinLTO)"
         type: choice
         options:
           - "none"
@@ -46,6 +46,11 @@ jobs:
           echo "Cloning Luminaire Kernel base (branch: android14-6.1-luminaire)..."
           git clone --depth=1 -b android14-6.1-luminaire https://github.com/chainonyourdoor/LuminaireKernel-6.1.git kernel
 
+      - name: Load Device Verified Working Config (zephyr_defconfig)
+        run: |
+          echo "Applying verified KMI-compatible config from device..."
+          cp zephyr_defconfig kernel/arch/arm64/configs/gki_defconfig
+
       - name: Integrate FinaSU Root & SUSFS Patches
         if: ${{ inputs.integrate_finasu }}
         run: |
@@ -81,11 +86,14 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_MAP
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_PRIORITY_UID_FILTER
 
-      - name: Setup Custom Branding (ZephyrKernel)
+      - name: Setup KMI-Compliant Custom Branding (.scmversion)
         run: |
           cd kernel
-          echo "-${{ inputs.kernel_name }}" > localversion
-          echo "Kernel branding set to: $(cat localversion)"
+          rm -f localversion*
+          printf "%s" "-android14-11-${{ inputs.kernel_name }}" > .scmversion
+          ./scripts/config --file arch/arm64/configs/gki_defconfig --set-str LOCALVERSION ""
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e LOCALVERSION_AUTO
+          echo "KMI Version string locked to: 6.1.187$(cat .scmversion)"
 
       - name: Configure LTO Mode
         run: |
@@ -95,24 +103,26 @@ jobs:
             ./scripts/config --file arch/arm64/configs/gki_defconfig -d LTO_NONE
             ./scripts/config --file arch/arm64/configs/gki_defconfig -e LTO_CLANG_THIN
           else
-            echo "Setting LTO to None (fastest & safest)..."
+            echo "Setting LTO to None (100% matching device KMI)..."
             ./scripts/config --file arch/arm64/configs/gki_defconfig -e LTO_NONE
             ./scripts/config --file arch/arm64/configs/gki_defconfig -d LTO_CLANG_THIN
             ./scripts/config --file arch/arm64/configs/gki_defconfig -d LTO_CLANG_FULL
           fi
 
-      - name: Apply Extra Kernel Features
+      - name: Apply Safe Extra Features (Preserving KMI ABI)
         if: ${{ inputs.enable_extra_features }}
         run: |
           cd kernel
-          echo "Applying extra features to gki_defconfig..."
+          echo "Applying safe extra features to gki_defconfig..."
           
           # 1. TTL Target & Mangling (Hotspot / Tethering bypass)
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e NETFILTER_XT_TARGET_TTL
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e NETFILTER_XT_TARGET_HL
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e IP_NF_TARGET_TTL
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e IP6_NF_TARGET_HL
           
-          # 2. CAKE Network Queue Discipline (Bufferbloat elimination for gaming)
-          ./scripts/config --file arch/arm64/configs/gki_defconfig -e NET_SCHED_CAKE
+          # 2. CAKE Network Queue Discipline (Bufferbloat elimination)
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e NET_SCH_CAKE
           
           # 3. Gamepad & Controller Drivers (PS4/PS5 DualSense, Xbox One/Series)
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e HID_SONY
@@ -122,10 +132,10 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e HID_MICROSOFT
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e JOYSTICK_XPAD
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e JOYSTICK_XPAD_FF
-          
-          # 4. Disable heavy debug bloat for performance
-          ./scripts/config --file arch/arm64/configs/gki_defconfig -d SLUB_DEBUG
-          ./scripts/config --file arch/arm64/configs/gki_defconfig -d DEBUG_KMEMLEAK
+
+          # IMPORTANT: Keep SLUB_DEBUG=y and UBSAN disabled to preserve MediaTek KMI ABI!
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e SLUB_DEBUG
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -d UBSAN
 
       - name: Cache Neutron Clang Toolchain
         id: cache-clang
@@ -178,7 +188,7 @@ jobs:
           
           cd anykernel
           BUILD_DATE=$(date +%Y%m%d_%H%M)
-          ZIP_NAME="${{ inputs.kernel_name }}-GKI-6.1-${BUILD_DATE}.zip"
+          ZIP_NAME="Zephyr-GKI-6.1-${BUILD_DATE}.zip"
           zip -r9 "../${ZIP_NAME}" * -x .git README.md *placeholder
           echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
 
