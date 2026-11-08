@@ -3,6 +3,7 @@ import os
 import sys
 import glob
 import json
+import random
 import urllib.request
 import subprocess
 
@@ -27,10 +28,17 @@ elif lto_raw == "none":
 else:
     lto_html = '<tg-button type="disabled" style="success">ThinLTO</tg-button>'
 
-# 2. Resolve Banner
+# 2. Resolve Banner (Pick random real HD cat meme banner from banner pool)
 BANNER_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "release", "telegram", "banner")
-banner_files = sorted(glob.glob(os.path.join(BANNER_DIR, "*.png")))
-banner_path = banner_files[0] if banner_files else None
+banner_candidates = sorted(glob.glob(os.path.join(BANNER_DIR, "banner_*.*")))
+if not banner_candidates:
+    banner_candidates = sorted([
+        f for f in glob.glob(os.path.join(BANNER_DIR, "*"))
+        if f.lower().endswith((".png", ".jpg", ".jpeg"))
+    ])
+banner_path = random.choice(banner_candidates) if banner_candidates else None
+if banner_path:
+    print(f"[Telegram] Selected random cat meme banner: {os.path.basename(banner_path)}")
 
 # 3. Build Rich Message Payload
 rich_markdown = f"""<tg-slideshow>
@@ -166,7 +174,7 @@ res = subprocess.run(cmd, capture_output=True, text=True)
 print("Rich message response:", res.stdout[:200])
 
 # 4. Upload Built ZIP Packages
-zip_files = sorted(glob.glob("release_assets/*.zip") + glob.glob("*.zip") + glob.glob("/tmp/zephyr_15_final/*.zip"))
+zip_files = sorted(glob.glob("release_assets/*.zip") + glob.glob("*.zip"))
 seen = set()
 unique_zips = []
 for z in zip_files:
