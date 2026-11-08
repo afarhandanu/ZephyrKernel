@@ -3,10 +3,6 @@ name: Build ZephyrKernel (GKI 6.1)
 on:
   workflow_dispatch:
     inputs:
-      kernel_name:
-        description: "Branding Suffix (e.g. Zephyr -> 6.1.187-android14-11-Zephyr)"
-        required: true
-        default: "Zephyr"
       root_variant:
         description: "Root Variant (all = Parallel Matrix Build semua varian, atau pilih 1 varian)"
         type: choice
@@ -44,6 +40,7 @@ permissions:
 jobs:
   setup-matrix:
     name: Prepare Build Matrix
+    if: github.repository_owner == 'afarhandanu'
     runs-on: ubuntu-24.04
     outputs:
       variants: ${{ steps.set-matrix.outputs.variants }}
@@ -299,10 +296,11 @@ jobs:
         run: |
           cd kernel
           rm -f localversion*
-          printf "%s" "-android14-11-${{ inputs.kernel_name }}" > .scmversion
+          printf "%s" "-android14-11-Zephyr" > .scmversion
           ./scripts/config --file arch/arm64/configs/gki_defconfig --set-str LOCALVERSION ""
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e LOCALVERSION_AUTO
-          echo "KMI Version string locked to: 6.1.187$(cat .scmversion)"
+          KVER=$(make -s kernelversion 2>/dev/null || echo "6.1.x")
+          echo "KMI Version string locked to: ${KVER}$(cat .scmversion)"
 
       - name: Configure LTO Mode (${{ matrix.lto }})
         run: |
@@ -474,11 +472,11 @@ jobs:
           TITLE="⚡ ZephyrKernel GKI 6.1 (Variants: ${{ inputs.root_variant }} | LTO: ${{ inputs.lto_mode }} | ${BUILD_DATE})"
 
           {
-            echo "## ⚡ ZephyrKernel GKI 2.0 — \`android14-11-${{ inputs.kernel_name }}\`"
+            echo "## ⚡ ZephyrKernel GKI 2.0 — \`android14-11-Zephyr\`"
             echo ""
             echo "| Property | Value |"
             echo "| :--- | :--- |"
-            echo "| **Branding** | \`6.1.x-android14-11-${{ inputs.kernel_name }}\` |"
+            echo "| **Branding** | \`6.1.x-android14-11-Zephyr\` |"
             echo "| **Builder** | \`kucingbalap1644@ZephyrCI\` |"
             echo "| **Toolchain** | \`Neutron Clang 24.0.0git + LLD 24.0.0 (ccache enabled)\` |"
             echo "| **LTO Modes Built** | \`${{ needs.setup-matrix.outputs.ltos }}\` |"

@@ -57,8 +57,7 @@
 
 1. Open the [**Actions**](https://github.com/afarhandanu/ZephyrKernel/actions/workflows/build-zephyr.yml) tab.
 2. Select **Build ZephyrKernel (GKI 6.1)** and click **Run workflow**.
-3. Choose your desired options:
-   - **Branding Suffix:** `Zephyr` (produces `6.1.187-android14-11-Zephyr`)
+3. Choose your desired options (Branding is permanently locked to `6.1.x-android14-11-Zephyr` / `kucingbalap1644@ZephyrCI` and protected by owner verification):
    - **Root Variant (`root_variant`):**
      - `finasu` — **FinaSU v1.5.0+** + SUSFS v2.3.0 Built-in (Default)
      - `ksunext` — **KernelSU-Next (`dev-susfs`)** + SUSFS Built-in
