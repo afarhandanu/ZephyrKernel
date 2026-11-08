@@ -8,12 +8,12 @@ on:
         required: true
         default: "Zephyr"
       lto_mode:
-        description: "LTO Optimization (none = cepat & 100% identik KMI HP kamu, thin = ThinLTO)"
+        description: "LTO Optimization (thin = ThinLTO seperti Luminaire, none = tanpa LTO)"
         type: choice
         options:
-          - "none"
           - "thin"
-        default: "none"
+          - "none"
+        default: "thin"
       integrate_finasu:
         description: "Integrate FinaSU root & SUSFS"
         type: boolean
@@ -106,6 +106,45 @@ jobs:
           patch -p1 --fuzz=3 < ../workbench/kernel/patches/schedutil_catchup/schedutil_catchup.patch
           patch -p1 --fuzz=3 < ../workbench/kernel/patches/ufs_writebooster_catchup/ufs_writebooster_catchup.patch
           patch -p1 --fuzz=3 < ../workbench/kernel/patches/workqueue_catchup/workqueue_catchup.patch
+
+          echo "10. Integrating Re:Kernel (Binder/Signal Netlink server)..."
+          python3 ../workbench/kernel/addons/rekernel/inject.py .
+          grep -q "Re:Kernel" drivers/android/binder.c
+          grep -q "Re:Kernel" drivers/android/binder_alloc.c
+          grep -q "Re:Kernel" kernel/signal.c
+
+          echo "11. Applying LZ4 v1.10.0 (ARM64 NEON) + ZSTD v1.5.7 bump (lz4zstd)..."
+          mkdir -p lib/lz4/lz4armv8
+          curl -fsSL -o lib/lz4/lz4armv8/lz4armv8.S "https://raw.githubusercontent.com/mrcxlinux/kernel_patches/main/zram/lz4armv8.S"
+          cp ../workbench/kernel/addons/lz4zstd/lz4accel.h ../workbench/kernel/addons/lz4zstd/lz4accel.c lib/lz4/lz4armv8/
+          curl -fsSL "https://raw.githubusercontent.com/mrcxlinux/kernel_patches/main/zram/001-lz4.patch" | patch -p1 --fuzz=3 --forward --no-backup-if-mismatch || true
+          grep -q "LZ4_VERSION_MINOR 10" lib/lz4/lz4.h
+          if [ -f lib/lz4/lz4hc.c ] && ! grep -q '#ifndef MIN' lib/lz4/lz4hc.c; then
+            sed -i \
+              -e 's/^#define MIN(a, b) ((a) < (b) ? (a) : (b))$/#ifndef MIN\n&\n#endif/' \
+              -e 's/^#define MAX(a, b) ((a) > (b) ? (a) : (b))$/#ifndef MAX\n&\n#endif/' \
+              lib/lz4/lz4hc.c
+          fi
+          for sym_pair in "LZ4_compress_fast_continue:lib/lz4/lz4.c" "LZ4_resetStreamHC:lib/lz4/lz4hc.c"; do
+            sym="${sym_pair%%:*}"
+            f="${sym_pair#*:}"
+            if [ -f "$f" ] && ! grep -q "^EXPORT_SYMBOL(${sym});" "$f"; then
+              guard_end=$(grep -n '^#endif /\* LZ4_COMMONDEFS_ONLY \*/' "$f" | tail -1 | cut -d: -f1 || true)
+              if [ -n "$guard_end" ]; then
+                sed -i "${guard_end}i EXPORT_SYMBOL(${sym});" "$f"
+              else
+                printf '\nEXPORT_SYMBOL(%s);\n' "$sym" >> "$f"
+              fi
+            fi
+          done
+          echo "Downloading ZSTD v1.5.7 from torvalds/linux v6.15..."
+          git clone --depth=1 --filter=blob:none --sparse -b v6.15 https://github.com/torvalds/linux.git ../linux_zstd
+          (cd ../linux_zstd && git sparse-checkout set lib/zstd include/linux/zstd.h include/linux/zstd_lib.h include/linux/zstd_errors.h)
+          cp -r ../linux_zstd/lib/zstd/* lib/zstd/
+          cp ../linux_zstd/include/linux/zstd.h ../linux_zstd/include/linux/zstd_lib.h ../linux_zstd/include/linux/zstd_errors.h include/linux/
+          rm -rf ../linux_zstd
+          sed -i 's#include <linux/unaligned.h>#include <asm/unaligned.h>#' lib/zstd/common/mem.h
+          grep -q "ZSTD_VERSION_RELEASE  7" include/linux/zstd_lib.h
 
       - name: Integrate FinaSU Root & SUSFS Patches
         if: ${{ inputs.integrate_finasu }}
@@ -265,11 +304,26 @@ jobs:
           export KBUILD_BUILD_USER="kucingbalap1644"
           export KBUILD_BUILD_HOST="ZephyrCI"
 
+          EXTRA_MAKE_ARGS=""
+          if [ "${{ inputs.lto_mode }}" = "thin" ]; then
+            mkdir -p /dev/shm/ldcache
+            LD_JOBS=$(( $(nproc --all) / 2 ))
+            [ "$LD_JOBS" -ge 1 ] || LD_JOBS=1
+            cat > "${PWD}/ld-wrapper" <<EOF
+          #!/usr/bin/env bash
+          exec ld.lld "\$@" --thinlto-cache-dir=/dev/shm/ldcache --thinlto-jobs=${LD_JOBS} --threads=${LD_JOBS}
+          EOF
+            sed -i 's/^[[:space:]]*//' "${PWD}/ld-wrapper"
+            chmod +x "${PWD}/ld-wrapper"
+            EXTRA_MAKE_ARGS="LD=${PWD}/ld-wrapper HOSTLD=${PWD}/ld-wrapper"
+            echo "ThinLTO ld-wrapper enabled (jobs/threads: ${LD_JOBS})"
+          fi
+
           echo "Generating gki_defconfig..."
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 KBUILD_BUILD_USER="kucingbalap1644" KBUILD_BUILD_HOST="ZephyrCI" gki_defconfig
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 $EXTRA_MAKE_ARGS KBUILD_BUILD_USER="kucingbalap1644" KBUILD_BUILD_HOST="ZephyrCI" gki_defconfig
           
           echo "Compiling Kernel Image..."
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 KBUILD_BUILD_USER="kucingbalap1644" KBUILD_BUILD_HOST="ZephyrCI" KCFLAGS="-Wno-unused-function -Wno-error" Image
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 $EXTRA_MAKE_ARGS KBUILD_BUILD_USER="kucingbalap1644" KBUILD_BUILD_HOST="ZephyrCI" KCFLAGS="-Wno-unused-function -Wno-error" Image
 
       - name: Package AnyKernel3 Flashable ZIP
         run: |
