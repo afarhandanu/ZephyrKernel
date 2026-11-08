@@ -51,11 +51,12 @@ jobs:
           echo "Applying verified KMI-compatible config from device..."
           cp zephyr_defconfig kernel/arch/arm64/configs/gki_defconfig
 
-      - name: Apply KMI ABI Fixes & Core Addons (SYSVIPC KABI, Module CRC Bypass, ZRAM LZ4KD, BBRv3, NTSYNC, BBG)
+      - name: Apply KMI ABI Fixes & Core Addons (SYSVIPC KABI, Module CRC Bypass, ZRAM LZ4KD, BBRv3, BORE, le9uo, Kcompressd, Catch-up Patches, MGLRU, NTSYNC, BBG)
         run: |
           set -euo pipefail
           git clone --depth=1 https://github.com/WildKernels/kernel_patches.git wild_patches
           git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git sukisu_patch
+          git clone --depth=1 https://github.com/dikafarabian/workbench.git workbench
 
           cd kernel
 
@@ -82,8 +83,9 @@ jobs:
           fi
           grep -q "custom_module_blacklist" kernel/module/main.c
 
-          echo "4. Applying KABI-compliant TCP BBRv3 congestion control..."
+          echo "4. Applying KABI-compliant TCP BBRv3 congestion control + boot enforcer..."
           patch -p1 < ../wild_patches/common/bbrv3/0001-net-tcp-backport-BBRv3-to-android14-6.1.patch
+          python3 ../workbench/kernel/patches/bbrv3/enforcer.py net/ipv4/tcp_cong.c
 
           echo "5. Applying NTSYNC synchronization primitive driver..."
           patch -p1 < ../wild_patches/common/ntsync/ntsync_base.patch
@@ -92,6 +94,21 @@ jobs:
           echo "6. Setting up Baseband Security Guard (BBG)..."
           curl -fsSL "https://raw.githubusercontent.com/vc-teahouse/Baseband-guard/main/setup.sh" | bash
           sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
+
+          echo "7. Applying BORE CPU Scheduler (v6.8.0-rc1)..."
+          patch -p1 --fuzz=3 < ../workbench/kernel/patches/bore/bore-v6.8.0-rc1.patch
+
+          echo "8. Applying le9uo Working Set Protection (v1.15)..."
+          patch -p1 --fuzz=3 < ../workbench/kernel/patches/le9uo/le9uo-v1.15.patch
+
+          echo "9. Applying Kcompressd (v0.5), Schedutil Catch-up, UFS WriteBooster Catch-up, & Workqueue Catch-up..."
+          patch -p1 --fuzz=3 < ../workbench/kernel/patches/kcompressd/kcompressd-v0.5.patch
+          patch -p1 --fuzz=3 < ../workbench/kernel/patches/schedutil_catchup/schedutil_catchup.patch
+          patch -p1 --fuzz=3 < ../workbench/kernel/patches/ufs_writebooster_catchup/ufs_writebooster_catchup.patch
+          patch -p1 --fuzz=3 < ../workbench/kernel/patches/workqueue_catchup/workqueue_catchup.patch
+
+          echo "10. Applying MGLRU force-enable patch..."
+          python3 ../workbench/kernel/addons/mglru/patch.py mm/vmscan.c
 
       - name: Integrate FinaSU Root & SUSFS Patches
         if: ${{ inputs.integrate_finasu }}
@@ -203,6 +220,13 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e CRYPTO_LZ4K
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e CRYPTO_LZ4KD
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e ZRAM_DEF_COMP_LZ4KD
+
+          # 4. BORE CPU Scheduler & le9uo Working Set Protection
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e SCHED_BORE
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e WORKINGSET_PROTECTION_ENABLED
+          ./scripts/config --file arch/arm64/configs/gki_defconfig --set-val ANON_MIN_RATIO 5
+          ./scripts/config --file arch/arm64/configs/gki_defconfig --set-val CLEAN_LOW_RATIO 0
+          ./scripts/config --file arch/arm64/configs/gki_defconfig --set-val CLEAN_MIN_RATIO 5
 
           # IMPORTANT: Keep SLUB_DEBUG=y and UBSAN disabled to preserve MediaTek KMI ABI!
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e SLUB_DEBUG
