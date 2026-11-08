@@ -19,12 +19,13 @@ on:
           - "all"
         default: "finasu"
       lto_mode:
-        description: "LTO Optimization (thin = ThinLTO, full = FullLTO, none = NoLTO)"
+        description: "LTO Optimization (all = Matrix Build Thin+Full+NoLTO, atau pilih 1 LTO)"
         type: choice
         options:
           - "thin"
           - "full"
           - "none"
+          - "all"
         default: "thin"
       enable_extra_features:
         description: "Enable extra features (BORE, le9uo, LZ4+ZSTD, LZ4KD, Re:Kernel, BBRv3, CAKE, TTL, NTSYNC, BBG)"
@@ -46,9 +47,10 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       variants: ${{ steps.set-matrix.outputs.variants }}
+      ltos: ${{ steps.set-matrix.outputs.ltos }}
       build_date: ${{ steps.set-matrix.outputs.build_date }}
     steps:
-      - name: Determine Variants to Build
+      - name: Determine Variants & LTO Modes to Build
         id: set-matrix
         run: |
           if [ "${{ inputs.root_variant }}" = "all" ]; then
@@ -56,16 +58,22 @@ jobs:
           else
             echo 'variants=["${{ inputs.root_variant }}"]' >> $GITHUB_OUTPUT
           fi
+          if [ "${{ inputs.lto_mode }}" = "all" ]; then
+            echo 'ltos=["thin","full","none"]' >> $GITHUB_OUTPUT
+          else
+            echo 'ltos=["${{ inputs.lto_mode }}"]' >> $GITHUB_OUTPUT
+          fi
           echo "build_date=$(date +%Y%m%d_%H%M)" >> $GITHUB_OUTPUT
 
   build:
-    name: "Build Zephyr (${{ matrix.variant }} | LTO: ${{ inputs.lto_mode }})"
+    name: "Build Zephyr (${{ matrix.variant }} | LTO: ${{ matrix.lto }})"
     needs: setup-matrix
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         variant: ${{ fromJson(needs.setup-matrix.outputs.variants) }}
+        lto: ${{ fromJson(needs.setup-matrix.outputs.ltos) }}
 
     steps:
       - name: Checkout ZephyrKernel Repository
@@ -82,10 +90,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.ccache
-          key: zephyr-ccache-6.1-${{ inputs.lto_mode }}-${{ matrix.variant }}-${{ github.run_id }}
+          key: zephyr-ccache-6.1-${{ matrix.lto }}-${{ matrix.variant }}-${{ github.run_id }}
           restore-keys: |
-            zephyr-ccache-6.1-${{ inputs.lto_mode }}-${{ matrix.variant }}-
-            zephyr-ccache-6.1-${{ inputs.lto_mode }}-
+            zephyr-ccache-6.1-${{ matrix.lto }}-${{ matrix.variant }}-
+            zephyr-ccache-6.1-${{ matrix.lto }}-
             zephyr-ccache-6.1-
 
       - name: Configure ccache
@@ -296,13 +304,13 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e LOCALVERSION_AUTO
           echo "KMI Version string locked to: 6.1.187$(cat .scmversion)"
 
-      - name: Configure LTO Mode (ThinLTO / FullLTO / NoLTO)
+      - name: Configure LTO Mode (${{ matrix.lto }})
         run: |
           cd kernel
-          if [ "${{ inputs.lto_mode }}" = "thin" ]; then
+          if [ "${{ matrix.lto }}" = "thin" ]; then
             echo "Enabling ThinLTO..."
             ./scripts/config --file arch/arm64/configs/gki_defconfig -d LTO_NONE -e LTO_CLANG_THIN -d LTO_CLANG_FULL
-          elif [ "${{ inputs.lto_mode }}" = "full" ]; then
+          elif [ "${{ matrix.lto }}" = "full" ]; then
             echo "Enabling FullLTO..."
             ./scripts/config --file arch/arm64/configs/gki_defconfig -d LTO_NONE -d LTO_CLANG_THIN -e LTO_CLANG_FULL
           else
@@ -390,7 +398,7 @@ jobs:
           export KBUILD_BUILD_HOST="ZephyrCI"
 
           EXTRA_MAKE_ARGS=""
-          if [ "${{ inputs.lto_mode }}" = "thin" ]; then
+          if [ "${{ matrix.lto }}" = "thin" ]; then
             mkdir -p /dev/shm/ldcache
             LD_JOBS=$(( $(nproc --all) / 2 ))
             [ "$LD_JOBS" -ge 1 ] || LD_JOBS=1
@@ -402,7 +410,7 @@ jobs:
             chmod +x "${PWD}/ld-wrapper"
             EXTRA_MAKE_ARGS="LD=${PWD}/ld-wrapper HOSTLD=${PWD}/ld-wrapper"
             echo "ThinLTO ld-wrapper enabled (jobs/threads: ${LD_JOBS})"
-          elif [ "${{ inputs.lto_mode }}" = "full" ]; then
+          elif [ "${{ matrix.lto }}" = "full" ]; then
             LD_JOBS=$(( $(nproc --all) / 2 ))
             [ "$LD_JOBS" -ge 1 ] || LD_JOBS=1
             cat > "${PWD}/ld-wrapper" <<EOF
@@ -435,11 +443,11 @@ jobs:
           cd anykernel
           BUILD_DATE="${{ needs.setup-matrix.outputs.build_date }}"
           KVER=$(make -s -C ../kernel kernelversion 2>/dev/null || echo "6.1.187")
-          ZIP_NAME="Zephyr-GKI-${KVER}-${{ matrix.variant }}-${{ inputs.lto_mode }}LTO-${BUILD_DATE}.zip"
+          ZIP_NAME="Zephyr-GKI-${KVER}-${{ matrix.variant }}-${{ matrix.lto }}LTO-${BUILD_DATE}.zip"
           zip -r9 "../${ZIP_NAME}" * -x .git README.md *placeholder
           echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
 
-      - name: Upload Kernel Artifact (${{ matrix.variant }})
+      - name: Upload Kernel Artifact (${{ matrix.variant }} - ${{ matrix.lto }}LTO)
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ZIP_NAME }}
@@ -457,13 +465,13 @@ jobs:
           path: release_assets
           merge-multiple: true
 
-      - name: Create GitHub Release with All Variants
+      - name: Create GitHub Release with All Variants & LTO Modes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BUILD_DATE="${{ needs.setup-matrix.outputs.build_date }}"
-          TAG="v6.1-${BUILD_DATE}-${{ inputs.lto_mode }}LTO"
-          TITLE="⚡ ZephyrKernel GKI 6.1 (${{ inputs.root_variant }} | ${{ inputs.lto_mode }}LTO | ${BUILD_DATE})"
+          TAG="v6.1-${BUILD_DATE}-${{ inputs.root_variant }}-${{ inputs.lto_mode }}LTO"
+          TITLE="⚡ ZephyrKernel GKI 6.1 (Variants: ${{ inputs.root_variant }} | LTO: ${{ inputs.lto_mode }} | ${BUILD_DATE})"
 
           {
             echo "## ⚡ ZephyrKernel GKI 2.0 — \`android14-11-${{ inputs.kernel_name }}\`"
@@ -473,7 +481,7 @@ jobs:
             echo "| **Branding** | \`6.1.x-android14-11-${{ inputs.kernel_name }}\` |"
             echo "| **Builder** | \`kucingbalap1644@ZephyrCI\` |"
             echo "| **Toolchain** | \`Neutron Clang 24.0.0git + LLD 24.0.0 (ccache enabled)\` |"
-            echo "| **LTO Mode** | \`${{ inputs.lto_mode }} (ThinLTO / FullLTO / NoLTO)\` |"
+            echo "| **LTO Modes Built** | \`${{ needs.setup-matrix.outputs.ltos }}\` |"
             echo "| **Root Variants Built** | \`${{ needs.setup-matrix.outputs.variants }}\` |"
             echo "| **CPU Scheduler** | \`BORE v6.8.0-rc1 + Schedutil/Workqueue Catch-up\` |"
             echo "| **Memory & ZRAM** | \`le9uo v1.15 (MGLRU Off) + LZ4 v1.10.0 NEON + ZSTD v1.5.7 + LZ4KD + Kcompressd v0.5\` |"

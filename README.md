@@ -70,6 +70,7 @@
      - `thin` — **ThinLTO** (Default)
      - `full` — **FullLTO**
      - `none` — **NoLTO**
+     - `all` — **Parallel Matrix Build** (builds ThinLTO, FullLTO, and NoLTO simultaneously!)
    - **Compiler Cache (`ccache`):** Automatically caches compiled object files (`~/.ccache`, up to 5 GB compressed) across builds for ultra-fast incremental rebuilds!
 4. When the workflow finishes, all flashable AnyKernel3 `.zip` packages are automatically published to [**GitHub Releases**](https://github.com/afarhandanu/ZephyrKernel/releases) and uploaded to workflow **Artifacts**!
 
