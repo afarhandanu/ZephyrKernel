@@ -66,6 +66,12 @@ jobs:
           sed -i '/bad_version:/,/^}/ s/return 0;/return 1;/' kernel/module/version.c
           grep -A 5 "bad_version:" kernel/module/version.c | grep -q "return 1;"
 
+          echo "2b. Removing GKI ABI protected exports & bypassing protected symbol restrictions (fixes WiFi/Bluetooth rfkill.ko & vendor_dlkm modules)..."
+          rm -rf android/abi_gki_protected_exports_*
+          sed -i 's/if (!mod->sig_ok && gki_is_module_protected_export(/if (0 \&\& !mod->sig_ok \&\& gki_is_module_protected_export(/' kernel/module/main.c
+          sed -i 's/!gki_is_module_unprotected_symbol(name)/0/' kernel/module/main.c
+          grep -q "if (0 && !mod->sig_ok && gki_is_module_protected_export(" kernel/module/main.c
+
           echo "3. Applying ZRAM LZ4K/LZ4KD & built-in module blacklist (lzo, lzo_rle, zram, zsmalloc)..."
           cp -r ../sukisu_patch/other/zram/lz4k/include/linux/* include/linux/
           cp -r ../sukisu_patch/other/zram/lz4k/lib/* lib/
@@ -105,6 +111,24 @@ jobs:
 
           echo "Setting up FinaSU..."
           curl -LSs "https://raw.githubusercontent.com/LyraVoid/FinaSU/master/kernel/setup.sh" | bash -s master
+
+          echo "Injecting official FinaSU Manager certificate into second trust slot in FinaSU/kernel/Kbuild..."
+          CERT_SIZE="0x02cc"
+          CERT_HASH="2d89b50aaf1db013c2b6738f973f48b62ea21a3a8d7216bfec3521065d448458"
+          awk -v size="$CERT_SIZE" -v hash="$CERT_HASH" '
+            !done && /^ccflags-y \+= -DEXPECTED_HASH=/ {
+              print
+              print "# Trust the official FinaSU manager via the second signature slot"
+              print "KSU_EXPECTED_SIZE2 := " size
+              print "KSU_EXPECTED_HASH2 := " hash
+              print "KSU_SECOND_SIGNATURE_RELEASE := 1"
+              done = 1
+              next
+            }
+            { print }
+          ' FinaSU/kernel/Kbuild > FinaSU/kernel/Kbuild.new && mv FinaSU/kernel/Kbuild.new FinaSU/kernel/Kbuild
+          grep -q "^KSU_EXPECTED_SIZE2 := 0x02cc" FinaSU/kernel/Kbuild
+          grep -q "^KSU_EXPECTED_HASH2 := 2d89b50aaf1db013c2b6738f973f48b62ea21a3a8d7216bfec3521065d448458" FinaSU/kernel/Kbuild
           
           echo "Enabling FinaSU & SUSFS in gki_defconfig..."
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU
@@ -213,11 +237,14 @@ jobs:
           clang --version
           
           cd kernel
+          export KBUILD_BUILD_USER="kucingbalap1644"
+          export KBUILD_BUILD_HOST="ZephyrCI"
+
           echo "Generating gki_defconfig..."
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 gki_defconfig
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 KBUILD_BUILD_USER="kucingbalap1644" KBUILD_BUILD_HOST="ZephyrCI" gki_defconfig
           
           echo "Compiling Kernel Image..."
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 KCFLAGS="-Wno-unused-function -Wno-error" Image
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 KBUILD_BUILD_USER="kucingbalap1644" KBUILD_BUILD_HOST="ZephyrCI" KCFLAGS="-Wno-unused-function -Wno-error" Image
 
       - name: Package AnyKernel3 Flashable ZIP
         run: |
