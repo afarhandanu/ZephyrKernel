@@ -132,7 +132,7 @@ rich_markdown = f"""<tg-slideshow>
 <tg-button-row><tg-button type="url" style="primary" url="https://github.com/pershoot/KernelSU-Next/releases">KernelSU-Next · SuSFS v2.3.0</tg-button></tg-button-row>
 <tg-button-row><tg-button type="url" style="primary" url="https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases">SukiSU-Ultra · SuSFS v2.3.0</tg-button></tg-button-row>
 <tg-button-row><tg-button type="url" style="primary" url="https://github.com/tiann/KernelSU/releases">KernelSU · SuSFS v2.3.0</tg-button></tg-button-row>
-<tg-button-row><tg-button type="url" style="primary" url="https://github.com/topjohnwu/Magisk/releases">Vanilla (Non-Root / Pure GKI)</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="{RELEASE_URL}">Vanilla (Non-Root / Pure GKI)</tg-button></tg-button-row>
 
 <tg-button-row>
   <tg-button type="url" style="primary" url="{RELEASE_URL}">📦 GitHub Release</tg-button>
