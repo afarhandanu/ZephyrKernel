@@ -54,10 +54,19 @@
 2. Select **Build ZephyrKernel (GKI 6.1)** and click **Run workflow**.
 3. Choose your desired options:
    - **Branding Suffix:** `Zephyr` (produces `6.1.187-android14-11-Zephyr`)
-   - **LTO Optimization:** `thin` (ThinLTO — default) or `none`
-   - **Integrate FinaSU & SUSFS:** `true`
-   - **Enable Extra Features:** `true`
-4. When the workflow finishes (~8–10 minutes), the flashable AnyKernel3 `.zip` is automatically published to [**GitHub Releases**](https://github.com/afarhandanu/ZephyrKernel/releases) and uploaded to workflow **Artifacts**!
+   - **Root Variant (`root_variant`):**
+     - `finasu` — **FinaSU v1.5.0+** + SUSFS v2.3.0 Built-in (Default)
+     - `ksunext` — **KernelSU-Next (`dev-susfs`)** + SUSFS Built-in
+     - `sukisu` — **SukiSU-Ultra (`builtin` + KPM)** + SUSFS Built-in
+     - `ksu` — **Official KernelSU (`tiann`)** + SUSFS Built-in
+     - `vanilla` — **Non-Root / Pure GKI** (for Magisk / APatch / rootless users)
+     - `all` — **Parallel Matrix Build** (builds all 5 variants simultaneously on 5 runners and publishes them into a single unified GitHub Release!)
+   - **LTO Optimization (`lto_mode`):**
+     - `thin` — **ThinLTO** (Default)
+     - `full` — **FullLTO**
+     - `none` — **NoLTO**
+   - **Compiler Cache (`ccache`):** Automatically caches compiled object files (`~/.ccache`, up to 5 GB compressed) across builds for ultra-fast incremental rebuilds!
+4. When the workflow finishes, all flashable AnyKernel3 `.zip` packages are automatically published to [**GitHub Releases**](https://github.com/afarhandanu/ZephyrKernel/releases) and uploaded to workflow **Artifacts**!
 
 ---
 
