@@ -39,7 +39,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential bc bison flex libssl-dev libelf-dev \
-            zip curl git ccache python3 patch libncurses-dev
+            zip curl git ccache python3 patch libncurses-dev zstd
 
       - name: Clone Luminaire Kernel Source Tree
         run: |
@@ -129,28 +129,21 @@ jobs:
           echo "Downloading antman from raw GitHub with retry..."
           curl -LSs --retry 5 "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman" -o antman
           chmod +x antman
-          echo "Fetching Neutron Clang..."
-          ./antman -S=05012024
-          ./antman --patch=glibc
+          echo "Fetching Neutron Clang (latest)..."
+          ./antman -S
+          echo "${GITHUB_WORKSPACE}/toolchain/bin" >> $GITHUB_PATH
 
       - name: Compile GKI Kernel Image
         run: |
-          export PATH="$(pwd)/toolchain/bin:$PATH"
-          export ARCH=arm64
-          export SUBARCH=arm64
-          export CC=clang
-          export LD=ld.lld
-          export AR=llvm-ar
-          export NM=llvm-nm
-          export OBJCOPY=llvm-objcopy
-          export OBJDUMP=llvm-objdump
-          export STRIP=llvm-strip
-          export LLVM=1
-          export LLVM_IAS=1
-
+          echo "=== Compiler Version ==="
+          clang --version
+          
           cd kernel
-          make O=out ARCH=arm64 gki_defconfig
-          make -j$(nproc --all) O=out ARCH=arm64 Image
+          echo "Generating gki_defconfig..."
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 gki_defconfig
+          
+          echo "Compiling Kernel Image..."
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 Image
 
       - name: Package AnyKernel3 Flashable ZIP
         run: |
