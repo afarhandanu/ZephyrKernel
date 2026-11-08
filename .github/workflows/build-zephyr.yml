@@ -11,6 +11,8 @@ on:
           - "ksunext"
           - "sukisu"
           - "ksu"
+          - "bakasu"
+          - "kowsu"
           - "vanilla"
           - "all"
         default: "finasu"
@@ -51,7 +53,7 @@ jobs:
         id: set-matrix
         run: |
           if [ "${{ inputs.root_variant }}" = "all" ]; then
-            echo 'variants=["finasu","ksunext","sukisu","ksu","vanilla"]' >> $GITHUB_OUTPUT
+            echo 'variants=["finasu","ksunext","sukisu","ksu","bakasu","kowsu","vanilla"]' >> $GITHUB_OUTPUT
           else
             echo 'variants=["${{ inputs.root_variant }}"]' >> $GITHUB_OUTPUT
           fi
@@ -87,8 +89,8 @@ jobs:
         run: |
           sudo swapoff -a 2>/dev/null || true
           sudo rm -f /mnt/swapfile
-          echo "Allocating 24GB swap on fast /mnt SSD..."
-          sudo fallocate -l 24G /mnt/swapfile 2>/dev/null || sudo dd if=/dev/zero of=/mnt/swapfile bs=1M count=24576
+          echo "Allocating 28GB swap on fast /mnt SSD..."
+          sudo fallocate -l 28G /mnt/swapfile 2>/dev/null || sudo dd if=/dev/zero of=/mnt/swapfile bs=1M count=28672
           sudo chmod 600 /mnt/swapfile
           sudo mkswap /mnt/swapfile
           sudo swapon /mnt/swapfile
@@ -275,6 +277,15 @@ jobs:
             KSU_DIR="KernelSU"
             python3 ../workbench/kernel/ksu/variants/sukisu/fallthrough_compat.py "${KSU_DIR}/kernel/policy/allowlist.c" || true
             ./scripts/config --file arch/arm64/configs/gki_defconfig -e KPM
+
+          elif [ "$VARIANT" = "bakasu" ]; then
+            curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash -s main
+            KSU_DIR="KernelSU"
+
+          elif [ "$VARIANT" = "kowsu" ]; then
+            curl -LSs "https://raw.githubusercontent.com/KOWX712/KernelSU/master/kernel/setup.sh" | bash -s master
+            KSU_DIR="KernelSU"
+            (cd "$KSU_DIR" && patch -p1 --fuzz=3 --forward < ../../susfs/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch) || true
 
           elif [ "$VARIANT" = "ksu" ]; then
             curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main

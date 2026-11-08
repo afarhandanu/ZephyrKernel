@@ -136,10 +136,12 @@ rich_markdown = f"""<tg-slideshow>
 <tr><td>MGLRU</td><td><tg-button type="disabled" style="danger">Disable</tg-button></td></tr>
 </table>
 
-<tg-button-row><tg-button type="url" style="primary" url="https://github.com/LyraVoid/FinaSU/releases">FinaSU v1.5.0+ · SuSFS v2.3.0</tg-button></tg-button-row>
-<tg-button-row><tg-button type="url" style="primary" url="https://github.com/pershoot/KernelSU-Next/releases">KernelSU-Next · SuSFS v2.3.0</tg-button></tg-button-row>
-<tg-button-row><tg-button type="url" style="primary" url="https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases">SukiSU-Ultra · SuSFS v2.3.0</tg-button></tg-button-row>
-<tg-button-row><tg-button type="url" style="primary" url="https://github.com/tiann/KernelSU/releases">KernelSU · SuSFS v2.3.0</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/FinaSU/">FinaSU v1.5.0+ · SuSFS v2.3.0</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/ksunext_ci/">KernelSU-Next · SuSFS v2.3.0</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/Sukiksu/7121/">SukiSU-Ultra · SuSFS v2.3.0</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/KernelSU_group/3234/">KernelSU · SuSFS v2.3.0</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/BakaSU_Grp/4/">BakaSU · SuSFS v2.3.0</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/kowsu_build/">KowSU · SuSFS v2.3.0</tg-button></tg-button-row>
 <tg-button-row><tg-button type="callback_data" data="vanilla" style="primary">Vanilla (Non-Root / Pure GKI)</tg-button></tg-button-row>
 
 <tg-button-row>
