@@ -24,6 +24,14 @@ on:
         type: boolean
         required: true
         default: true
+      publish_release:
+        description: "Automatically publish flashable ZIP to GitHub Releases"
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -339,12 +347,50 @@ jobs:
           
           cd anykernel
           BUILD_DATE=$(date +%Y%m%d_%H%M)
+          KVER=$(make -s -C ../kernel kernelversion 2>/dev/null || echo "6.1.187")
           ZIP_NAME="Zephyr-GKI-6.1-${BUILD_DATE}.zip"
           zip -r9 "../${ZIP_NAME}" * -x .git README.md *placeholder
+          ZIP_SHA256=$(sha256sum "../${ZIP_NAME}" | awk '{print $1}')
           echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
+          echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
+          echo "KVER=${KVER}" >> $GITHUB_ENV
+          echo "ZIP_SHA256=${ZIP_SHA256}" >> $GITHUB_ENV
 
       - name: Upload Kernel Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ZIP_NAME }}
           path: ${{ env.ZIP_NAME }}
+
+      - name: Publish to GitHub Releases
+        if: ${{ inputs.publish_release }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${KVER}-${BUILD_DATE}"
+          TITLE="⚡ ZephyrKernel ${KVER}-android14-11-${{ inputs.kernel_name }} (${BUILD_DATE})"
+          cat > release_notes.md <<EOF
+          ## ⚡ ZephyrKernel GKI 2.0 — \`${KVER}-android14-11-${{ inputs.kernel_name }}\`
+
+          | Property | Value |
+          | :--- | :--- |
+          | **Kernel Version** | \`${KVER}-android14-11-${{ inputs.kernel_name }}\` |
+          | **Builder** | \`kucingbalap1644@ZephyrCI\` |
+          | **Toolchain** | \`Neutron Clang 24.0.0git + LLD 24.0.0\` |
+          | **LTO Mode** | \`${{ inputs.lto_mode }}\` |
+          | **Root & Stealth** | \`FinaSU v1.5.0+ (Dual-Slot Cert) + SUSFS v2.3.0 Built-in\` |
+          | **CPU Scheduler** | \`BORE v6.8.0-rc1 + Schedutil/Workqueue Catch-up\` |
+          | **Memory & ZRAM** | \`le9uo v1.15 (MGLRU Off) + LZ4 v1.10.0 NEON + ZSTD v1.5.7 + LZ4KD + Kcompressd v0.5\` |
+          | **Networking** | \`TCP BBRv3 (Boot Enforcer) + CAKE Qdisc + TTL/HL Bypass\` |
+          | **Addons & Security** | \`Re:Kernel (Port 22) + NTSYNC (/dev/ntsync) + SYSVIPC (KABI-safe) + BBG + Gamepad FF\` |
+          | **SHA-256 Checksum** | \`${ZIP_SHA256}\` |
+
+          ### 📦 Flashable AnyKernel3 Package
+          - **File:** \`${ZIP_NAME}\`
+          - Flash via **Franco Kernel Manager (FKM)**, **Kernel Flasher**, **Bolt**, or Custom Recovery.
+          EOF
+          sed -i 's/^          //' release_notes.md
+          gh release create "$TAG" "${ZIP_NAME}" \
+            --title "$TITLE" \
+            --notes-file release_notes.md \
+            --latest
