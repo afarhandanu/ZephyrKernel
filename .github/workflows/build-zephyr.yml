@@ -1,0 +1,131 @@
+name: Build ZephyrKernel (GKI 6.1)
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_name:
+        description: "Branding / Kernel Name"
+        required: true
+        default: "ZephyrKernel"
+      integrate_finasu:
+        description: "Integrate FinaSU root"
+        type: boolean
+        required: true
+        default: true
+      enable_extra_features:
+        description: "Enable extra features (TTL bypass, CAKE Qdisc, Gamepad drivers)"
+        type: boolean
+        required: true
+        default: true
+
+jobs:
+  build:
+    name: Compile ZephyrKernel GKI
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout ZephyrKernel Repository
+        uses: actions/checkout@v4
+
+      - name: Install Build Tools & Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential bc bison flex libssl-dev libelf-dev \
+            zip curl git ccache python3
+
+      - name: Clone Luminaire Kernel Source Tree
+        run: |
+          echo "Cloning Luminaire Kernel base (branch: android14-6.1-luminaire)..."
+          git clone --depth=1 -b android14-6.1-luminaire https://github.com/chainonyourdoor/LuminaireKernel-6.1.git kernel
+
+      - name: Integrate FinaSU Root
+        if: ${{ inputs.integrate_finasu }}
+        run: |
+          cd kernel
+          echo "Setting up FinaSU..."
+          curl -LSs "https://raw.githubusercontent.com/LyraVoid/FinaSU/master/kernel/setup.sh" | bash -s master
+          echo "FinaSU setup complete."
+
+      - name: Setup Custom Branding (ZephyrKernel)
+        run: |
+          cd kernel
+          echo "-${{ inputs.kernel_name }}" > localversion
+          echo "Kernel branding set to: $(cat localversion)"
+
+      - name: Apply Extra Kernel Features
+        if: ${{ inputs.enable_extra_features }}
+        run: |
+          cd kernel
+          echo "Applying extra features to gki_defconfig..."
+          
+          # 1. TTL Target & Mangling (Hotspot / Tethering bypass)
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e NETFILTER_XT_TARGET_TTL
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e NETFILTER_XT_TARGET_HL
+          
+          # 2. CAKE Network Queue Discipline (Bufferbloat elimination for gaming)
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e NET_SCHED_CAKE
+          
+          # 3. Gamepad & Controller Drivers (PS4/PS5 DualSense, Xbox One/Series)
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e HID_SONY
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e SONY_FF
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e HID_PLAYSTATION
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e PLAYSTATION_FF
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e HID_MICROSOFT
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e JOYSTICK_XPAD
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e JOYSTICK_XPAD_FF
+          
+          # 4. Disable heavy debug bloat for performance
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -d SLUB_DEBUG
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -d DEBUG_KMEMLEAK
+
+      - name: Setup Neutron Clang Toolchain
+        run: |
+          mkdir -p toolchain
+          cd toolchain
+          curl -LO "https://github.com/Neutron-Toolchains/antman/raw/main/antman"
+          chmod +x antman
+          ./antman -S=05012024
+          ./antman --patch=glibc
+
+      - name: Compile GKI Kernel Image
+        run: |
+          export PATH="$(pwd)/toolchain/bin:$PATH"
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CC=clang
+          export LD=ld.lld
+          export AR=llvm-ar
+          export NM=llvm-nm
+          export OBJCOPY=llvm-objcopy
+          export OBJDUMP=llvm-objdump
+          export STRIP=llvm-strip
+          export LLVM=1
+          export LLVM_IAS=1
+
+          cd kernel
+          make O=out ARCH=arm64 gki_defconfig
+          make -j$(nproc --all) O=out ARCH=arm64 Image
+
+      - name: Package AnyKernel3 Flashable ZIP
+        run: |
+          git clone https://github.com/osm0sis/AnyKernel3 --depth=1 anykernel
+          
+          # Copy custom banner and modded anykernel script
+          cp anykernel_template/banner anykernel/banner
+          cp anykernel_template/anykernel.sh anykernel/anykernel.sh
+          
+          # Copy compiled Image
+          cp kernel/out/arch/arm64/boot/Image anykernel/Image
+          
+          cd anykernel
+          BUILD_DATE=$(date +%Y%m%d_%H%M)
+          ZIP_NAME="${{ inputs.kernel_name }}-GKI-6.1-${BUILD_DATE}.zip"
+          zip -r9 "../${ZIP_NAME}" * -x .git README.md *placeholder
+          echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
+
+      - name: Upload Kernel Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP_NAME }}
+          path: ${{ env.ZIP_NAME }}
