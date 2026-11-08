@@ -20,7 +20,7 @@ on:
         required: true
         default: true
       enable_extra_features:
-        description: "Enable extra features (TTL bypass, CAKE Qdisc, Gamepad drivers)"
+        description: "Enable extra features (TTL bypass, CAKE Qdisc, Gamepad drivers, BBRv3, LZ4KD, NTSYNC, BBG)"
         type: boolean
         required: true
         default: true
@@ -50,6 +50,42 @@ jobs:
         run: |
           echo "Applying verified KMI-compatible config from device..."
           cp zephyr_defconfig kernel/arch/arm64/configs/gki_defconfig
+
+      - name: Apply KMI ABI Fixes & Core Addons (SYSVIPC KABI, Module CRC Bypass, ZRAM LZ4KD, BBRv3, NTSYNC, BBG)
+        run: |
+          set -euo pipefail
+          git clone --depth=1 https://github.com/WildKernels/kernel_patches.git wild_patches
+          git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git sukisu_patch
+
+          cd kernel
+
+          echo "1. Applying SYSVIPC task_struct KABI padding fix (prevents +24 byte shift in task_struct)..."
+          patch -p1 < ../wild_patches/common/droidspaces/fix_sysvipc_kabi_6_7_8.patch
+
+          echo "2. Applying check_version() CRC bypass in kernel/module/version.c..."
+          sed -i '/bad_version:/,/^}/ s/return 0;/return 1;/' kernel/module/version.c
+          grep -A 5 "bad_version:" kernel/module/version.c | grep -q "return 1;"
+
+          echo "3. Applying ZRAM LZ4K/LZ4KD & built-in module blacklist (lzo, lzo_rle, zram, zsmalloc)..."
+          cp -r ../sukisu_patch/other/zram/lz4k/include/linux/* include/linux/
+          cp -r ../sukisu_patch/other/zram/lz4k/lib/* lib/
+          cp -r ../sukisu_patch/other/zram/lz4k/crypto/* crypto/
+          patch -p1 --forward < ../sukisu_patch/other/zram/zram_patch/6.1/lz4kd.patch || true
+          if ! grep -q "CONFIG_CRYPTO_LZ4K" crypto/Makefile; then
+            sed -i '/obj-$(CONFIG_CRYPTO_LZ4HC) += lz4hc.o/a obj-$(CONFIG_CRYPTO_LZ4K) += lz4k.o\nobj-$(CONFIG_CRYPTO_LZ4KD) += lz4kd.o' crypto/Makefile
+          fi
+          grep -q "custom_module_blacklist" kernel/module/main.c
+
+          echo "4. Applying KABI-compliant TCP BBRv3 congestion control..."
+          patch -p1 < ../wild_patches/common/bbrv3/0001-net-tcp-backport-BBRv3-to-android14-6.1.patch
+
+          echo "5. Applying NTSYNC synchronization primitive driver..."
+          patch -p1 < ../wild_patches/common/ntsync/ntsync_base.patch
+          patch -p1 < ../wild_patches/common/ntsync/ntsync_compat_android14-6.1.patch
+
+          echo "6. Setting up Baseband Security Guard (BBG)..."
+          curl -fsSL "https://raw.githubusercontent.com/vc-teahouse/Baseband-guard/main/setup.sh" | bash
+          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
 
       - name: Integrate FinaSU Root & SUSFS Patches
         if: ${{ inputs.integrate_finasu }}
@@ -121,10 +157,13 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e IP_NF_TARGET_TTL
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e IP6_NF_TARGET_HL
           
-          # 2. CAKE Network Queue Discipline (Bufferbloat elimination)
+          # 2. CAKE Network Queue Discipline & BBRv3
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e NET_SCH_CAKE
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e TCP_CONG_BBR3
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e DEFAULT_BBR3
+          ./scripts/config --file arch/arm64/configs/gki_defconfig --set-str DEFAULT_TCP_CONG "bbr3"
           
-          # 3. Gamepad & Controller Drivers (PS4/PS5 DualSense, Xbox One/Series)
+          # 3. Gamepad & Controller Drivers + NTSYNC + ZRAM LZ4KD + BBG
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e HID_SONY
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e SONY_FF
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e HID_PLAYSTATION
@@ -132,6 +171,11 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e HID_MICROSOFT
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e JOYSTICK_XPAD
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e JOYSTICK_XPAD_FF
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e NTSYNC
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e BBG
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e CRYPTO_LZ4K
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e CRYPTO_LZ4KD
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e ZRAM_DEF_COMP_LZ4KD
 
           # IMPORTANT: Keep SLUB_DEBUG=y and UBSAN disabled to preserve MediaTek KMI ABI!
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e SLUB_DEBUG
@@ -177,7 +221,7 @@ jobs:
 
       - name: Package AnyKernel3 Flashable ZIP
         run: |
-          git clone https://github.com/osm0sis/AnyKernel3 --depth=1 anykernel
+          git clone https://github.com/chainonyourdoor/AnyKernel3-Luminaire.git --depth=1 anykernel
           
           # Copy custom banner and modded anykernel script
           cp anykernel_template/banner anykernel/banner
