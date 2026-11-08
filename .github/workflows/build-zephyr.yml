@@ -109,6 +109,9 @@ jobs:
           sed -i 's/static struct cred \*susfs_switch_to_ksu_domain/static __maybe_unused struct cred \*susfs_switch_to_ksu_domain/' fs/susfs.c
           sed -i 's/static void susfs_restore_creds/static __maybe_unused void susfs_restore_creds/' fs/susfs.c
 
+          # Keep SUSFS_VERSION at v2.3.0 so FinaSU ksud recognizes the wire protocol as compatible/builtin
+          sed -i 's/#define SUSFS_VERSION "v2.4.0"/#define SUSFS_VERSION "v2.3.0"/' include/linux/susfs.h
+
           echo "Setting up FinaSU..."
           curl -LSs "https://raw.githubusercontent.com/LyraVoid/FinaSU/master/kernel/setup.sh" | bash -s master
 
