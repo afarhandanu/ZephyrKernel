@@ -139,10 +139,11 @@ jobs:
           done
           echo "Downloading ZSTD v1.5.7 from torvalds/linux v6.15..."
           git clone --depth=1 --filter=blob:none --sparse -b v6.15 https://github.com/torvalds/linux.git ../linux_zstd
-          (cd ../linux_zstd && git sparse-checkout set lib/zstd include/linux/zstd.h include/linux/zstd_lib.h include/linux/zstd_errors.h)
+          (cd ../linux_zstd && git sparse-checkout set --no-cone lib/zstd include/linux/zstd.h include/linux/zstd_lib.h include/linux/zstd_errors.h)
           cp -r ../linux_zstd/lib/zstd/* lib/zstd/
           cp ../linux_zstd/include/linux/zstd.h ../linux_zstd/include/linux/zstd_lib.h ../linux_zstd/include/linux/zstd_errors.h include/linux/
           rm -rf ../linux_zstd
+          rm -f lib/lz4/lz4armv8/*.rej
           sed -i 's#include <linux/unaligned.h>#include <asm/unaligned.h>#' lib/zstd/common/mem.h
           grep -q "ZSTD_VERSION_RELEASE  7" include/linux/zstd_lib.h
 
