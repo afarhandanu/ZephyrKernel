@@ -236,7 +236,7 @@ def compose_markdown(env, variants_block, banner_ids=()) -> str:
     else:
         if banner_ids:
             parts.append(banner_slideshow(banner_ids))
-        parts.append(f"# Zephyr Protocol | {linux_ver}")
+        parts.append(f"# ⚡ ZephyrKernel | {linux_ver}")
         parts.append(f"> GKI Kernel | Android {android_ver} | Linux {major_minor}")
         parts.append(features_details(env))
         parts.append(build_info_table(env))

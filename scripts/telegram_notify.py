@@ -16,17 +16,28 @@ if not BOT_TOKEN or not CHAT_ID:
     print("[WARN] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing. Skipping Telegram post.")
     sys.exit(0)
 
-# 1. Resolve Banner
+# 1. Resolve LTO display
+lto_raw = LTO_MODE.lower()
+if lto_raw == "all":
+    lto_html = '<tg-button type="disabled" style="success">ThinLTO</tg-button> <tg-button type="disabled" style="primary">FullLTO</tg-button> <tg-button type="disabled" style="danger">NoLTO</tg-button>'
+elif lto_raw == "full":
+    lto_html = '<tg-button type="disabled" style="primary">FullLTO</tg-button>'
+elif lto_raw == "none":
+    lto_html = '<tg-button type="disabled" style="danger">NoLTO</tg-button>'
+else:
+    lto_html = '<tg-button type="disabled" style="success">ThinLTO</tg-button>'
+
+# 2. Resolve Banner
 BANNER_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "release", "telegram", "banner")
 banner_files = sorted(glob.glob(os.path.join(BANNER_DIR, "*.png")))
 banner_path = banner_files[0] if banner_files else None
 
-# 2. Build Rich Message Payload
+# 3. Build Rich Message Payload
 rich_markdown = f"""<tg-slideshow>
 <img src="tg://photo?id=banner1" />
 </tg-slideshow>
 
-# Zephyr Protocol | {KERNEL_VER}
+# ⚡ ZephyrKernel | {KERNEL_VER}
 > GKI Kernel | Android 14 | Linux 6.1.x
 
 <details>
@@ -104,7 +115,7 @@ rich_markdown = f"""<tg-slideshow>
 <tr><td>Source</td><td><tg-button type="url" url="https://github.com/afarhandanu/ZephyrKernel">ZephyrKernel</tg-button></td></tr>
 <tr><td>Branch</td><td><tg-button type="url" url="https://github.com/afarhandanu/ZephyrKernel">main</tg-button></td></tr>
 <tr><td>Toolchain</td><td>Neutron Clang 24.0.0git + LLD 24.0.0</td></tr>
-<tr><td>LTO</td><td><tg-button type="disabled" style="success">{LTO_MODE.upper()}LTO</tg-button></td></tr>
+<tr><td>LTO</td><td>{lto_html}</td></tr>
 </table>
 
 <table bordered>
