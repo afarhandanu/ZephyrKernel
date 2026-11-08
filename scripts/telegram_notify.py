@@ -37,32 +37,34 @@ caption_html = f"""<b>⚡ Zephyr Protocol | {KERNEL_VER}</b>
 <blockquote><b>GKI Kernel | Android 14 | Linux 6.1.x</b></blockquote>
 
 <blockquote expandable><b>^ What's Inside?</b>
-<b>📁 Filesystem</b>
-• Mountify / OverlayFS
-• F2FS Extended Attributes
-• POSIX ACL
+<b>🛡️ Root & Stealth Integration</b>
+• Multi-Variant (FinaSU / KSU-Next / SukiSU / KSU / Vanilla)
+• SUSFS v2.3.0 Built-in (11 stealth features)
+• Module CRC bypass & GKI symbol unlock (WiFi/BT 100% fix)
 
-<b>🧠 Memory & Storage</b>
-• ZRAM (LZ4 v1.10.0 NEON + LZ4KD)
-• ZSTD v1.5.7 (Linux 6.15 backport)
-• Kcompressd v0.5 background daemon
-• le9uo v1.15 Working Set Protection (MGLRU Off)
-• UFS WriteBooster Catch-up
-
-<b>🔥 CPU & Scheduler</b>
+<b>🔥 CPU, Scheduler & Toolchain</b>
 • BORE CPU Scheduler v6.8.0-rc1 (sched_bore=1)
 • Schedutil Catch-up & Workqueue Catch-up
-• Ondemand & Schedutil Governors
-• MQ-Deadline / Kyber I/O Schedulers
+• Neutron Clang 24.0.0git + LLD 24.0.0 (ccache)
+• ThinLTO / FullLTO / NoLTO selectable
 
-<b>🌐 Network & Gaming</b>
+<b>🧠 Memory & Compression Architecture</b>
+• le9uo v1.15 Working Set Protection (MGLRU Off)
+• LZ4 v1.10.0 (ARM64 NEON) + ZSTD v1.5.7 (Linux 6.15)
+• ZRAM LZ4KD + Kcompressd v0.5 daemon
+• UFS WriteBooster Catch-up
+
+<b>🎮 Gaming, Emulation & Hardware</b>
+• NTSYNC (/dev/ntsync) Winlator / Wine / Mobox
+• Re:Kernel (Port 22 Netlink Server)
+• Droidspaces / SYSVIPC (KABI task_struct safe)
+• Baseband Security Guard (BBG)
+• Full Gamepad FF (DualSense PS5 / DS4 / Xbox)
+
+<b>🌐 Network & Tethering</b>
 • TCP BBRv3 + Delayed Boot Enforcer
 • CAKE Queue Discipline (Anti-Bufferbloat)
-• TTL / HL Target Mangling (Tethering Bypass)
-• NTSYNC (/dev/ntsync) Winlator/Wine Driver
-• Droidspaces / SYSVIPC (KABI-safe)
-• Gamepad Force Feedback (DualSense / DS4 / Xbox)
-• Baseband Security Guard (BBG)
+• TTL / HL Target Mangling (Hotspot Quota Bypass)
 </blockquote>
 
 <b>📋 Build Information:</b>
