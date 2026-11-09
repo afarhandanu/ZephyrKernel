@@ -48,11 +48,13 @@
 - **Baseband Security Guard (`CONFIG_BBG=y`):** Linux Security Module protecting critical modem/IMEI partitions (`nvram`, `nvdata`, `persist`, `efs`) from unauthorized tampering.
 
 ### 🛡️ Multi-Variant Root & Stealth Integration
-- **5 Selectable Root Variants (Single or Parallel `all` Matrix Build):**
+- **7 Selectable Root Variants (Single or Parallel `all` Matrix Build):**
   - **FinaSU (`v1.5.0+`):** Next-generation kernel-based root with dual-slot signature verification (supports both official **FinaSU Manager** and **KernelSU Manager**).
   - **KernelSU-Next (`dev-susfs`):** Feature-rich KernelSU fork by `KernelSU-Next` with native SUSFS integration.
   - **SukiSU-Ultra (`builtin` + KPM):** Enhanced root solution with built-in **Kernel Patch Module (`CONFIG_KPM=y`)** support.
   - **Official KernelSU (`tiann`):** Classic upstream KernelSU with full SUSFS patches.
+  - **BakaSU:** Lightweight, performant root solution with full SUSFS integration.
+  - **KowSU:** Enhanced root variant with native SUSFS cloaking support.
   - **Vanilla (`Non-Root`):** Clean, unrooted GKI 2.0 image without KernelSU or SUSFS (ideal for **Magisk**, **APatch**, or pure rootless setups).
 - **SUSFS (`v2.3.0 / v2.4.0 Built-in`):** Full built-in VFS root-hiding suite (`hide_mounts`, `avc_spoof`, `uname`, `cmdline`, `path`, `map`, `dynamic_kstat`, `full_clone`, `static_kstat`, `redirect`, `logging`) on all rooted variants.
 - **Full Vendor Module Compatibility:** Includes `check_version()` CRC bypass and GKI protected-exports bypass so all `/system_dlkm` and `/vendor_dlkm` modules (WiFi, Bluetooth, NFC, Camera, Audio SmartPA, GPU) load cleanly.
@@ -69,8 +71,10 @@
      - `ksunext` — **KernelSU-Next (`dev-susfs`)** + SUSFS Built-in
      - `sukisu` — **SukiSU-Ultra (`builtin` + KPM)** + SUSFS Built-in
      - `ksu` — **Official KernelSU (`tiann`)** + SUSFS Built-in
+     - `bakasu` — **BakaSU** + SUSFS Built-in
+     - `kowsu` — **KowSU** + SUSFS Built-in
      - `vanilla` — **Non-Root / Pure GKI** (for Magisk / APatch / rootless users)
-     - `all` — **Parallel Matrix Build** (builds all 5 variants simultaneously on 5 runners and publishes them into a single unified GitHub Release!)
+     - `all` — **Parallel Matrix Build** (builds all 7 variants simultaneously on parallel runners and publishes them into a single unified GitHub Release!)
    - **LTO Optimization (`lto_mode`):**
      - `thin` — **ThinLTO** (Default)
      - `full` — **FullLTO**
