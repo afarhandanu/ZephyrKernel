@@ -47,7 +47,6 @@ rich_markdown = f"""<tg-slideshow>
 
 # ⚡ ZephyrKernel | {KERNEL_VER}
 > GKI Kernel | Android 14 | Linux 6.1.x
-> Device: POCO X7 / Redmi Note 14 Pro 5G (malachite)
 
 <details>
 <summary><tg-button type="disabled" style="primary">What's Inside?</tg-button></summary>
@@ -115,27 +114,12 @@ rich_markdown = f"""<tg-slideshow>
 <tr><td>LZ4 v1.10.0 + ZSTD v1.5.7</td></tr>
 <tr><td>SYSVIPC Droidspaces</td></tr>
 <tr><td>SUSFS v2.3.0 Built-in</td></tr>
-<tr><td>Linux 6.1.192 LTS Sync</td></tr>
 </table>
-</details>
-
-<details>
-<summary>Upstream 6.1.192 & Security Backports</summary>
-
-- Linux LTS: Synced cleanly to upstream Linux 6.1.192 LTS
-- Pinmux (8434dec94): Fix race causing mux_owner NULL with active mux_usecount
-- Block blk-mq (26d495f0f6): Fix tag memory leak when shrinking nr_hw_queues
-- F2FS Sysfs (8b927ad2d1): Use modern IOPRIO_PRIO_LEVEL macro for checkpoint sysfs
-- IPsec ESP4/ESP6 (cb37596580): Prevent managed frag page refcount leak in esp_ssg_unref
-- UDP Tunnel (d53a8b927ac): Synchronous cancel of delayed work to avoid UAF on unregister
-- Futex Note: FUT_OFF_MMSHARED deferred to protect mm_struct KABI reserve slots
-- Bluetooth & DMA-Buf: Upstream stability, race condition, and UAF mitigations
 </details>
 </details>
 
 <table bordered>
 <tr><td>Kernel</td><td>Linux {KERNEL_VER}</td></tr>
-<tr><td>Device</td><td>POCO X7 / Redmi Note 14 Pro 5G (malachite)</td></tr>
 <tr><td>Source</td><td><tg-button type="url" url="https://github.com/afarhandanu/ZephyrKernel">ZephyrKernel</tg-button></td></tr>
 <tr><td>Branch</td><td><tg-button type="url" url="https://github.com/afarhandanu/ZephyrKernel">main</tg-button></td></tr>
 <tr><td>Toolchain</td><td>Neutron Clang 24.0.0git + LLD 24.0.0</td></tr>
@@ -169,7 +153,7 @@ rich_markdown = f"""<tg-slideshow>
   <tg-button type="url" style="primary" url="https://github.com/afarhandanu/ZephyrKernel">⚡ Repository</tg-button>
 </tg-button-row>
 
-\\#GKI \\#Kernel \\#Zephyr \\#malachite"""
+\\#GKI \\#Kernel \\#Zephyr"""
 
 payload = {
     "markdown": rich_markdown,
