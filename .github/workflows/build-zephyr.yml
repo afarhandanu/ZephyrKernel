@@ -114,11 +114,11 @@ jobs:
           ccache -o compression=true
           ccache -z
 
-      - name: Clone Luminaire Kernel Source Tree
+      - name: Clone Zephyr Kernel Source Tree (Linux 6.1.192 LTS)
         run: |
           rm -rf kernel
-          echo "Cloning Luminaire Kernel base (branch: android14-6.1-luminaire)..."
-          git clone --depth=1 -b android14-6.1-luminaire https://github.com/chainonyourdoor/LuminaireKernel-6.1.git kernel
+          echo "Cloning Zephyr Kernel base (branch: android14-6.1-luminaire)..."
+          git clone --depth=1 -b android14-6.1-luminaire https://github.com/afarhandanu/ZephyrKernel-6.1.git kernel
 
       - name: Load Device Verified Working Config (zephyr_defconfig)
         run: |
@@ -158,7 +158,7 @@ jobs:
           grep -q "custom_module_blacklist" kernel/module/main.c
 
           echo "4. Applying KABI-compliant TCP BBRv3 congestion control + boot enforcer..."
-          patch -p1 < ../wild_patches/common/bbrv3/0001-net-tcp-backport-BBRv3-to-android14-6.1.patch
+          patch -p1 --fuzz=3 < ../wild_patches/common/bbrv3/0001-net-tcp-backport-BBRv3-to-android14-6.1.patch
           python3 ../workbench/kernel/patches/bbrv3/enforcer.py net/ipv4/tcp_cong.c
 
           echo "5. Applying NTSYNC synchronization primitive driver..."
@@ -504,14 +504,16 @@ jobs:
             echo ""
             echo "| Property | Value |"
             echo "| :--- | :--- |"
+            echo "| **Linux Base** | \`Linux 6.1.192 LTS (Upstream Sync)\` |"
             echo "| **Branding** | \`6.1.x-android14-11-Zephyr\` |"
             echo "| **Builder** | \`kucingbalap1644@ZephyrCI\` |"
             echo "| **Toolchain** | \`Neutron Clang 24.0.0git + LLD 24.0.0 (ccache enabled)\` |"
             echo "| **LTO Modes Built** | \`${{ needs.setup-matrix.outputs.ltos }}\` |"
             echo "| **Root Variants Built** | \`${{ needs.setup-matrix.outputs.variants }}\` |"
-            echo "| **CPU Scheduler** | \`BORE v6.8.0-rc1 + Schedutil/Workqueue Catch-up\` |"
+            echo "| **CPU Scheduler** | \`BORE v6.8.0-rc1 + Power-Efficient WQ + Schedutil/Workqueue Catch-up\` |"
             echo "| **Memory & ZRAM** | \`le9uo v1.15 (MGLRU Off) + LZ4 v1.10.0 NEON + ZSTD v1.5.7 + LZ4KD + Kcompressd v0.5\` |"
-            echo "| **Networking** | \`TCP BBRv3 (Boot Enforcer) + CAKE Qdisc + TTL/HL Bypass\` |"
+            echo "| **Networking** | \`TCP BBRv3 (Boot Enforcer) + Google FQ Pacing + MPTCP + CAKE Qdisc + TTL/HL Bypass\` |"
+            echo "| **Audio & Multimedia** | \`Bit-Perfect & Hi-Res USB DAC Audio (UAC2 / ALSA)\` |"
             echo "| **Addons & Security** | \`Re:Kernel (Port 22) + NTSYNC (/dev/ntsync) + SYSVIPC (KABI-safe) + BBG + Gamepad FF\` |"
             echo ""
             echo "### 📦 SHA-256 Checksums"
@@ -531,7 +533,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           RELEASE_URL: https://github.com/${{ github.repository }}/releases/tag/v6.1-${{ needs.setup-matrix.outputs.build_date }}-${{ inputs.root_variant }}-${{ inputs.lto_mode }}LTO
-          KERNEL_VER: "6.1.187"
+          KERNEL_VER: "6.1.192"
           LTO_MODE: ${{ inputs.lto_mode }}
           VARIANTS: ${{ inputs.root_variant }}
         run: |

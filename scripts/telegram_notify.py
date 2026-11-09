@@ -10,7 +10,7 @@ import subprocess
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 RELEASE_URL = os.environ.get("RELEASE_URL", "https://github.com/afarhandanu/ZephyrKernel/releases")
-KERNEL_VER = os.environ.get("KERNEL_VER", "6.1.187")
+KERNEL_VER = os.environ.get("KERNEL_VER", "6.1.192")
 LTO_MODE = os.environ.get("LTO_MODE", "thin")
 
 if not BOT_TOKEN or not CHAT_ID:
@@ -128,6 +128,10 @@ rich_markdown = f"""<tg-slideshow>
 
 <table bordered>
 <tr><td>Mountless Engine</td><td><tg-button type="disabled">None</tg-button></td></tr>
+<tr><td>MPTCP</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
+<tr><td>Power-Efficient WQ</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
+<tr><td>Google FQ Pacing</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
+<tr><td>Hi-Res USB Audio</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
 <tr><td>Droidspaces</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
 <tr><td>Re:Kernel</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
 <tr><td>NTSync</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>

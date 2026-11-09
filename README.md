@@ -4,7 +4,7 @@
 
 [![Build ZephyrKernel (GKI 6.1)](https://github.com/afarhandanu/ZephyrKernel/actions/workflows/build-zephyr.yml/badge.svg)](https://github.com/afarhandanu/ZephyrKernel/actions/workflows/build-zephyr.yml)
 [![Latest Release](https://img.shields.io/github/v/release/afarhandanu/ZephyrKernel?label=Latest%20Release&color=00b4d8)](https://github.com/afarhandanu/ZephyrKernel/releases/latest)
-![Kernel Version](https://img.shields.io/badge/Linux-6.1.187%2B%20LTS-blue?logo=linux)
+![Kernel Version](https://img.shields.io/badge/Linux-6.1.192%2B%20LTS-blue?logo=linux)
 ![KMI](https://img.shields.io/badge/KMI-android14--11--Zephyr-success?logo=android)
 ![Compiler](https://img.shields.io/badge/Compiler-Neutron%20Clang%2024.0.0%20%2B%20ThinLTO-purple?logo=llvm)
 ![Builder](https://img.shields.io/badge/Builder-kucingbalap1644%40ZephyrCI-orange)
@@ -20,6 +20,8 @@
 ## ✨ Key Features & Enhancements
 
 ### 🔥 CPU, Scheduler, & Toolchain
+- **Upstream Linux 6.1.192 LTS Core:** Fully synced to the latest LTS release with manual Android Common Kernel (ACK) fixups and MediaTek pinctrl compatibility.
+- **Power-Efficient Workqueues (`CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y`):** Shifts workqueues to energy-efficient CPU cores when idle, reducing background battery drain significantly.
 - **BORE CPU Scheduler (`v6.8.0-rc1`):** *Burst-Oriented Response Enhancer* (`kernel.sched_bore = 1`) for ultra-responsive UI rendering, low touch latency, and smooth multitasking under heavy load.
 - **Neutron Clang `24.0.0git` + LLD `24.0.0`:** Configurable Link-Time Optimization supporting **ThinLTO (`CONFIG_LTO_CLANG_THIN=y`)**, **FullLTO (`CONFIG_LTO_CLANG_FULL=y`)**, or **NoLTO (`CONFIG_LTO_NONE=y`)**, paired with **Clang Control Flow Integrity (`CONFIG_CFI_CLANG=y`)** and persistent **`ccache`** compiler caching.
 - **Mainline Catch-up Backports:** Includes `schedutil_catchup`, `workqueue_catchup`, and `ufs_writebooster_catchup` for optimal frequency scaling and UFS storage throughput.
@@ -29,8 +31,12 @@
 - **LZ4 `v1.10.0` (ARM64 NEON Assembly) + ZSTD `v1.5.7` (Linux 6.15 Backport):** Hardware-accelerated compression/decompression across the kernel.
 - **ZRAM `LZ4K` & `LZ4KD` + `Kcompressd v0.5`:** Built-in ZRAM with `lz4`, `lz4hc`, `lz4k`, `lz4kd`, `zstd`, `lzo-rle`, `deflate` support, paired with `kcompressd` background compression daemon and vendor module conflict bypass.
 
-### 🌐 Networking & Tethering
+### 🌐 Networking, Audio, & Tethering
 - **TCP BBRv3 (`bbr3`) + Boot Enforcer:** Google's 3rd-generation BBR congestion control set as default, reinforced by a delayed-work boot enforcer so vendor init scripts cannot revert it to `cubic`.
+- **Google FQ Pacing Pairing (`CONFIG_NET_SCH_FQ=y` + `CONFIG_DEFAULT_NET_SCH="fq"`):** Pairs Fair Queue pacing directly with BBRv3 for zero packet drops and minimum bufferbloat.
+- **Multipath TCP (`CONFIG_MPTCP=y`):** Simultaneous WiFi + Cellular data aggregation for ultra-fast downloads and seamless connection failover.
+- **TCP Fast Open (`CONFIG_INET_TCP_DIAG=y`):** Accelerates subsequent HTTP/HTTPS handshakes by transmitting data in SYN packets.
+- **Bit-Perfect & Hi-Res USB Audio (`CONFIG_SND_USB_AUDIO=y`):** Native hardware bypass support for external USB DACs (up to 32-bit / 768kHz and DSD).
 - **CAKE Queue Discipline (`CONFIG_NET_SCH_CAKE=y`):** Smart Queue Management (SQM) to eliminate bufferbloat and ping spikes during online gaming.
 - **TTL / HL Mangling (`IP_NF_TARGET_TTL` & `IP6_NF_TARGET_HL`):** Native packet hop-limit/TTL modification support for hotspot/tethering quota bypass.
 
