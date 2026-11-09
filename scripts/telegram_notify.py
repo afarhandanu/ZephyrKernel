@@ -151,7 +151,7 @@ rich_markdown = f"""<tg-slideshow>
 - NTSYNC (/dev/ntsync) Windows NT sync driver for Wine/Winlator
 - Re:Kernel Port 22 + Gamepad Force Feedback + BBG
 - SuSFS v2.3.0 VFS root cloaking (Play Integrity STRONG / Banking hide)
-- Target: Xiaomi POCO X7 / Redmi Note 14 Pro 5G (malachite) MT6878
+- Compatibility: Universal Android 14 GKI 6.1 (Tested on POCO X7 / Redmi Note 14 Pro 5G)
 </details>
 </details>
 

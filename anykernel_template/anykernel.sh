@@ -5,7 +5,7 @@
 ### AnyKernel setup
 # global properties
 properties() { '
-kernel.string=ZephyrKernel for POCO X7 (GKI 6.1)
+kernel.string=ZephyrKernel (Universal Android 14 GKI 6.1)
 do.devicecheck=0
 do.modules=0
 do.systemless=0

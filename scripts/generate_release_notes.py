@@ -11,7 +11,7 @@ def main():
 
     notes = f"""# ⚡ ZephyrKernel GKI 2.0 — `android14-6.1-Zephyr`
 **High-performance, ultra-responsive, KMI-compliant Android Generic Kernel Image (GKI 2.0)**
-*Tailored for Xiaomi POCO X7 / Redmi Note 14 Pro 5G (`malachite` — MediaTek Dimensity 7300-Ultra `mt6878`) & All Android 14 GKI 6.1 devices.*
+*Built for Universal Android 14 GKI 6.1 devices (Tested on POCO X7 / Redmi Note 14 Pro 5G `malachite` — MT6878).*
 
 ---
 
@@ -21,13 +21,13 @@ def main():
 | :--- | :--- |
 | **Linux Kernel Base** | `Linux {kernel_ver} LTS (Upstream Stable Sync)` |
 | **Kernel Branding** | `6.1.x-android14-11-Zephyr` |
-| **Target Device** | `Xiaomi POCO X7 / Redmi Note 14 Pro 5G (malachite) / Universal GKI 6.1` |
-| **SoC Architecture** | `MediaTek Dimensity 7300-Ultra (MT6878) / ARM64` |
+| **Target Compatibility** | `Universal Android 14 GKI 6.1 (Tested: POCO X7 / Redmi Note 14 Pro 5G)` |
+| **Architecture** | `ARM64 (aarch64) GKI 2.0` |
 | **Builder / Host** | `kucingbalap1644@ZephyrCI` |
 | **Compiler Toolchain** | `Neutron Clang 24.0.0git + LLD 24.0.0 (ccache enabled)` |
 | **LTO Optimization Modes** | `{ltos}` |
 | **Root Solutions Built** | `{variants}` |
-| **KMI ABI Status** | `100% MediaTek Dimensity 7300-Ultra Compliant (0 broken symbols)` |
+| **KMI ABI Status** | `100% Android 14 KMI Compliant (0 broken symbols)` |
 
 ---
 
