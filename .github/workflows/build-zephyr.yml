@@ -122,6 +122,9 @@ jobs:
           echo "Applying swapops.h migration page lock fix (BUG_ON -> WARN_ON_ONCE)..."
           sed -i 's/BUG_ON(!PageLocked(p));/WARN_ON_ONCE(!PageLocked(p));/' kernel/include/linux/swapops.h
           grep -q "WARN_ON_ONCE(!PageLocked(p));" kernel/include/linux/swapops.h
+          echo "Applying OpenSSL 3 certs/extract-cert.c key_pass fix..."
+          sed -i 's/#ifdef USE_PKCS11_ENGINE/#ifndef OPENSSL_NO_ENGINE/' kernel/certs/extract-cert.c
+          grep -q "#ifndef OPENSSL_NO_ENGINE" kernel/certs/extract-cert.c
 
       - name: Load Device Verified Working Config (zephyr_defconfig)
         run: |
