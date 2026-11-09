@@ -7,7 +7,7 @@ import subprocess
 def main():
     ltos = os.environ.get("BUILD_LTOS", "thin")
     variants = os.environ.get("BUILD_VARIANTS", "finasu")
-    kernel_ver = os.environ.get("KERNEL_VER", "6.1.192")
+    kernel_ver = os.environ.get("KERNEL_VER", "6.1.190")
 
     notes = f"""# ⚡ ZephyrKernel GKI 2.0 — `android14-6.1-Zephyr`
 **High-performance, ultra-responsive, KMI-compliant Android Generic Kernel Image (GKI 2.0)**

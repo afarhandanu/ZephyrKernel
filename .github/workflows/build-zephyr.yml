@@ -114,11 +114,14 @@ jobs:
           ccache -o compression=true
           ccache -z
 
-      - name: Clone Zephyr Kernel Source Tree (Linux 6.1.192 LTS)
+      - name: Clone Zephyr Kernel Source Tree (Linux 6.1.190 LTS)
         run: |
           rm -rf kernel
-          echo "Cloning Zephyr Kernel base (branch: android14-6.1-luminaire)..."
-          git clone --depth=1 -b android14-6.1-luminaire https://github.com/afarhandanu/ZephyrKernel-6.1.git kernel
+          echo "Cloning Zephyr Kernel base (SAGA 6.1.190 upgrade-190-v2)..."
+          git clone --depth=1 -b upgrade-190-v2 https://github.com/Andrews571/SAGA-Kernel-6.1.git kernel
+          echo "Applying swapops.h migration page lock fix (BUG_ON -> WARN_ON_ONCE)..."
+          sed -i 's/BUG_ON(!PageLocked(p));/WARN_ON_ONCE(!PageLocked(p));/' kernel/include/linux/swapops.h
+          grep -q "WARN_ON_ONCE(!PageLocked(p));" kernel/include/linux/swapops.h
 
       - name: Load Device Verified Working Config (zephyr_defconfig)
         run: |
@@ -465,7 +468,7 @@ jobs:
           
           cd anykernel
           BUILD_DATE="${{ needs.setup-matrix.outputs.build_date }}"
-          KVER=$(make -s -C ../kernel kernelversion 2>/dev/null || echo "6.1.192")
+          KVER=$(make -s -C ../kernel kernelversion 2>/dev/null || echo "6.1.190")
           ZIP_NAME="Zephyr-GKI-${KVER}-${{ matrix.variant }}-${{ matrix.lto }}LTO-${BUILD_DATE}.zip"
           zip -r9 "../${ZIP_NAME}" * -x .git README.md *placeholder
           echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
@@ -496,7 +499,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BUILD_LTOS: ${{ needs.setup-matrix.outputs.ltos }}
           BUILD_VARIANTS: ${{ needs.setup-matrix.outputs.variants }}
-          KERNEL_VER: "6.1.192"
+          KERNEL_VER: "6.1.190"
         run: |
           BUILD_DATE="${{ needs.setup-matrix.outputs.build_date }}"
           TAG="v6.1-${BUILD_DATE}-${{ inputs.root_variant }}-${{ inputs.lto_mode }}LTO"
@@ -515,7 +518,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           RELEASE_URL: https://github.com/${{ github.repository }}/releases/tag/v6.1-${{ needs.setup-matrix.outputs.build_date }}-${{ inputs.root_variant }}-${{ inputs.lto_mode }}LTO
-          KERNEL_VER: "6.1.192"
+          KERNEL_VER: "6.1.190"
           LTO_MODE: ${{ inputs.lto_mode }}
           VARIANTS: ${{ inputs.root_variant }}
         run: |
