@@ -118,6 +118,43 @@ rich_markdown = f"""<tg-slideshow>
 </details>
 </details>
 
+<details>
+<summary><tg-button type="disabled" style="primary">Changelog & Backports</tg-button></summary>
+
+<details>
+<summary>Upstream 6.1.192 LTS & CVE Backports</summary>
+
+- Linux LTS: Synced cleanly to upstream Linux 6.1.192 LTS
+- Pinmux (8434dec94): Fix race causing mux_owner NULL with active mux_usecount
+- Block blk-mq (26d495f0f6): Fix tag memory leak when shrinking nr_hw_queues
+- F2FS Sysfs (8b927ad2d1): Use modern IOPRIO_PRIO_LEVEL macro for checkpoint sysfs
+- IPsec ESP4/ESP6 (cb37596580): Prevent managed frag page refcount leak in esp_ssg_unref
+- UDP Tunnel (d53a8b927ac): Synchronous cancel of delayed work to avoid UAF on unregister
+- Futex Note: FUT_OFF_MMSHARED deferred to protect mm_struct KABI reserve slots
+- Bluetooth & DMA-Buf: Upstream stability, race condition, and UAF mitigations
+</details>
+
+<details>
+<summary>Features & System Tuning</summary>
+
+- BORE (Burst-Oriented Response Enhancer) v6.8.0-rc1 (kernel.sched_bore = 1)
+- Power-Efficient Workqueues (CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y)
+- le9uo v1.15 Low-Memory Working Set Protection (MGLRU off for MediaTek)
+- LZ4 v1.10.0 ARM64 NEON + ZSTD v1.5.7 (from Linux 6.15)
+- LZ4K & LZ4KD high-throughput compression engines
+- kcompressd v0.5 asynchronous memory compression daemon
+- Google TCP BBRv3 + Google FQ Pacing boot enforcer
+- Multipath TCP (CONFIG_MPTCP=y) simultaneous WiFi + Cellular aggregation
+- CAKE Smart Queue Management (CONFIG_NET_SCH_CAKE=y)
+- Netfilter TTL / HL hop-limit target bypass (unlimited hotspot tethering)
+- Bit-Perfect & Hi-Res USB DAC Audio bypass (CONFIG_SND_USB_AUDIO=y)
+- NTSYNC (/dev/ntsync) Windows NT sync driver for Wine/Winlator
+- Re:Kernel Port 22 + Gamepad Force Feedback + BBG
+- SuSFS v2.3.0 VFS root cloaking (Play Integrity STRONG / Banking hide)
+- Target: Xiaomi POCO X7 / Redmi Note 14 Pro 5G (malachite) MT6878
+</details>
+</details>
+
 <table bordered>
 <tr><td>Kernel</td><td>Linux {KERNEL_VER}</td></tr>
 <tr><td>Source</td><td><tg-button type="url" url="https://github.com/afarhandanu/ZephyrKernel">ZephyrKernel</tg-button></td></tr>
