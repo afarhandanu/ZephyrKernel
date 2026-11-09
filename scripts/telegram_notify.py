@@ -46,16 +46,81 @@ rich_markdown = f"""<tg-slideshow>
 </tg-slideshow>
 
 # ⚡ ZephyrKernel | {KERNEL_VER}
-> GKI 2.0 | Android 14 | Linux 6.1.192 LTS
-> Target: Xiaomi POCO X7 / Redmi Note 14 Pro 5G (malachite) & GKI 6.1 Devices
+> GKI Kernel | Android 14 | Linux 6.1.x
+> Device: POCO X7 / Redmi Note 14 Pro 5G (malachite)
 
 <details>
-<summary><tg-button type="disabled" style="primary">📖 Complete Changelog & Features</tg-button></summary>
+<summary><tg-button type="disabled" style="primary">What's Inside?</tg-button></summary>
 
-<tg-button-row><tg-button type="disabled">Upstream 6.1.192 & Security Fixes</tg-button></tg-button-row>
+<tg-button-row><tg-button type="disabled">Core Features</tg-button></tg-button-row>
 
 <details>
-<summary>🛡️ Upstream 6.1.192 LTS & CVE Backports</summary>
+<summary>Filesystem</summary>
+
+- Mountify / OverlayFS
+- F2FS Extended Attributes
+- POSIX ACL
+</details>
+
+<details>
+<summary>Memory</summary>
+
+- ZRAM (LZ4 compression)
+- Memory Tracking
+- Writeback Support
+</details>
+
+<details>
+<summary>CPU & Scheduler</summary>
+
+- Ondemand Governor (included)
+- Frame Warning Disabled
+- I/O Scheduler (MQ-Deadline, Kyber)
+</details>
+
+<details>
+<summary>Network</summary>
+
+- TCP Congestion Control: BBR, BIC, CUBIC, Westwood, HTCP
+- Network Schedulers: FQ, FQ_CoDel, CAKE, PIE, FQ-PIE
+- IP Set
+- IPv6 NAT
+- TTL Target (Netfilter)
+</details>
+
+<details>
+<summary>Debug</summary>
+
+- Full Kallsyms
+- UBSAN Disabled
+- Page Owner Disabled
+- RCU Trace Disabled
+</details>
+
+<details>
+<summary>Zephyr & Luminaire Tuning</summary>
+
+<table bordered>
+<tr><td>BORE v6.8.0-rc1</td></tr>
+<tr><td>BBRv3</td></tr>
+<tr><td>BBG</td></tr>
+<tr><td>WireGuard</td></tr>
+<tr><td>le9uo v1.15</td></tr>
+<tr><td>Kcompressd v0.5</td></tr>
+<tr><td>Workqueue Catch-up</td></tr>
+<tr><td>Schedutil Catch-up</td></tr>
+<tr><td>UFS WriteBooster Catch-up</td></tr>
+<tr><td>Re:Kernel Port 22</td></tr>
+<tr><td>NTSYNC /dev/ntsync</td></tr>
+<tr><td>LZ4 v1.10.0 + ZSTD v1.5.7</td></tr>
+<tr><td>SYSVIPC Droidspaces</td></tr>
+<tr><td>SUSFS v2.3.0 Built-in</td></tr>
+<tr><td>Linux 6.1.192 LTS Sync</td></tr>
+</table>
+</details>
+
+<details>
+<summary>Upstream 6.1.192 & Security Backports</summary>
 
 - Linux LTS: Synced cleanly to upstream Linux 6.1.192 LTS
 - Pinmux (8434dec94): Fix race causing mux_owner NULL with active mux_usecount
@@ -63,107 +128,32 @@ rich_markdown = f"""<tg-slideshow>
 - F2FS Sysfs (8b927ad2d1): Use modern IOPRIO_PRIO_LEVEL macro for checkpoint sysfs
 - IPsec ESP4/ESP6 (cb37596580): Prevent managed frag page refcount leak in esp_ssg_unref
 - UDP Tunnel (d53a8b927ac): Synchronous cancel of delayed work to avoid UAF on unregister
-- Futex KABI Note: FUT_OFF_MMSHARED deferred to protect mm_struct KABI reserve slots
+- Futex Note: FUT_OFF_MMSHARED deferred to protect mm_struct KABI reserve slots
 - Bluetooth & DMA-Buf: Upstream stability, race condition, and UAF mitigations
-</details>
-
-<tg-button-row><tg-button type="disabled">Core Subsystem Features</tg-button></tg-button-row>
-
-<details>
-<summary>⚡ CPU Scheduler & Responsiveness</summary>
-
-- BORE (Burst-Oriented Response Enhancer) v6.8.0-rc1 (kernel.sched_bore = 1)
-- Eliminates micro-stutters & prioritizes user-interactive frame rates
-- Power-Efficient Workqueues (CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y)
-- Mainline Schedutil & Workqueue Catch-up patches
-- Frame Warning Disabled (clean logcat under high GPU load)
-- Governors: Schedutil, Ondemand, Performance
-</details>
-
-<details>
-<summary>💾 Memory, ZRAM & Compression</summary>
-
-- le9uo v1.15 low-memory protection (bypasses MGLRU for ZRAM)
-- Ultra-fast anonymous memory reclamation without UI freezes
-- Modern LZ4 v1.10.0 with ARM64 NEON ASM acceleration
-- ZSTD v1.5.7 backported from Linux 6.15 for maximum compression
-- LZ4K & LZ4KD high-throughput compression engines
-- kcompressd v0.5 asynchronous memory compression daemon
-- Built-in memory module blacklist (lzo, lzo_rle, zram, zsmalloc)
-</details>
-
-<details>
-<summary>🌐 Networking & Tethering</summary>
-
-- Google TCP BBRv3 + boot-time auto-enforcer daemon
-- Google FQ Pacing (CONFIG_NET_SCH_FQ=y, default packet scheduler)
-- Multipath TCP (CONFIG_MPTCP=y) for WiFi + Mobile Data aggregation
-- CAKE Smart Queue Management (CONFIG_NET_SCH_CAKE=y)
-- Netfilter TTL / HL hop-limit target bypass (unlimited hotspot tethering)
-- Built-in WireGuard VPN kernel accelerator
-- IPv6 NAT & IP Set support
-</details>
-
-<details>
-<summary>🎵 Audio & Multimedia</summary>
-
-- Bit-Perfect & Hi-Res USB DAC Audio bypass (CONFIG_SND_USB_AUDIO=y)
-- Direct ALSA / UAC2 bit-perfect master output up to 32-bit/768kHz & Native DSD
-- Bypass Android audio mixer re-sampling for audiophile USB DACs
-</details>
-
-<details>
-<summary>🎮 Gaming & Emulation</summary>
-
-- NTSYNC (/dev/ntsync) — Windows NT sync primitives driver for Wine / Winlator gaming
-- BBG (Baseband Security Guard) modem partition protection
-- Gamepad Force Feedback drivers (PS5 DualSense, PS4 DS4, Xbox)
-</details>
-
-<details>
-<summary>📁 Storage & Filesystems</summary>
-
-- Mainline UFS WriteBooster Catch-up
-- F2FS Extended Attributes, POSIX ACL, and read extent cache locking fixes
-- OverlayFS / Mountify support for rootless overlay mounts
-</details>
-
-<details>
-<summary>🛡️ KMI ABI & Root Security</summary>
-
-- 100% MediaTek Dimensity 7300-Ultra & GKI KMI ABI compliant (0 broken symbols)
-- SYSVIPC task_struct KABI padding fix (+24 byte shift prevented)
-- check_version() CRC bypass for vendor_dlkm compatibility
-- Protected symbol export bypass (fixes WiFi/Bluetooth rfkill.ko)
-- Re:Kernel emergency root backdoor on Port 22
-- SuSFS v2.3.0 kernel-level cloaking (anti-detection & Play Integrity STRONG)
 </details>
 </details>
 
 <table bordered>
-<tr><td>Kernel</td><td>Linux {KERNEL_VER} LTS</td></tr>
+<tr><td>Kernel</td><td>Linux {KERNEL_VER}</td></tr>
 <tr><td>Device</td><td>POCO X7 / Redmi Note 14 Pro 5G (malachite)</td></tr>
-<tr><td>Architecture</td><td>ARM64 GKI 6.1 (Dimensity 7300-Ultra MT6878)</td></tr>
-<tr><td>Source</td><td><tg-button type="url" url="https://github.com/afarhandanu/ZephyrKernel-6.1">ZephyrKernel-6.1</tg-button></td></tr>
-<tr><td>Builder</td><td>kucingbalap1644@ZephyrCI</td></tr>
+<tr><td>Source</td><td><tg-button type="url" url="https://github.com/afarhandanu/ZephyrKernel">ZephyrKernel</tg-button></td></tr>
+<tr><td>Branch</td><td><tg-button type="url" url="https://github.com/afarhandanu/ZephyrKernel">main</tg-button></td></tr>
 <tr><td>Toolchain</td><td>Neutron Clang 24.0.0git + LLD 24.0.0</td></tr>
 <tr><td>LTO</td><td>{lto_html}</td></tr>
 </table>
 
 <table bordered>
-<tr><td>Linux LTS Sync</td><td><tg-button type="disabled" style="success">6.1.192</tg-button></td></tr>
-<tr><td>BORE Scheduler</td><td><tg-button type="disabled" style="success">v6.8.0-rc1</tg-button></td></tr>
-<tr><td>TCP Congestion</td><td><tg-button type="disabled" style="success">BBRv3 + FQ</tg-button></td></tr>
-<tr><td>MPTCP Bonding</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
+<tr><td>Mountless Engine</td><td><tg-button type="disabled">None</tg-button></td></tr>
+<tr><td>MPTCP</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
 <tr><td>Power-Efficient WQ</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
+<tr><td>Google FQ Pacing</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
 <tr><td>Hi-Res USB Audio</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
-<tr><td>le9uo LowMem</td><td><tg-button type="disabled" style="success">v1.15</tg-button></td></tr>
-<tr><td>ZRAM Compression</td><td><tg-button type="disabled" style="success">LZ4 + ZSTD v1.5.7</tg-button></td></tr>
-<tr><td>TTL/HL Bypass</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
-<tr><td>NTSync Emulation</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
-<tr><td>Re:Kernel</td><td><tg-button type="disabled" style="success">Port 22</tg-button></td></tr>
-<tr><td>SuSFS Kernel Hide</td><td><tg-button type="disabled" style="success">v2.3.0</tg-button></td></tr>
-<tr><td>MediaTek KMI ABI</td><td><tg-button type="disabled" style="success">100% Intact</tg-button></td></tr>
+<tr><td>Droidspaces</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
+<tr><td>Re:Kernel</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
+<tr><td>NTSync</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
+<tr><td>LZ4+ZSTD</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
+<tr><td>LZ4KD</td><td><tg-button type="disabled" style="success">Enable</tg-button></td></tr>
+<tr><td>MGLRU</td><td><tg-button type="disabled" style="danger">Disable</tg-button></td></tr>
 </table>
 
 <tg-button-row><tg-button type="url" style="primary" url="https://t.me/FinaSU/">FinaSU v1.5.0+ · SuSFS v2.3.0</tg-button></tg-button-row>
@@ -179,7 +169,7 @@ rich_markdown = f"""<tg-slideshow>
   <tg-button type="url" style="primary" url="https://github.com/afarhandanu/ZephyrKernel">⚡ Repository</tg-button>
 </tg-button-row>
 
-\\#GKI \\#Kernel \\#Zephyr \\#malachite \\#Dimensity7300"""
+\\#GKI \\#Kernel \\#Zephyr \\#malachite"""
 
 payload = {
     "markdown": rich_markdown,
