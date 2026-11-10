@@ -4,7 +4,7 @@
 
 [![Build ZephyrKernel (GKI 6.1)](https://github.com/afarhandanu/ZephyrKernel/actions/workflows/build-zephyr.yml/badge.svg)](https://github.com/afarhandanu/ZephyrKernel/actions/workflows/build-zephyr.yml)
 [![Latest Release](https://img.shields.io/github/v/release/afarhandanu/ZephyrKernel?label=Latest%20Release&color=00b4d8)](https://github.com/afarhandanu/ZephyrKernel/releases/latest)
-![Kernel Version](https://img.shields.io/badge/Linux-6.1.190%20LTS-blue?logo=linux)
+![Kernel Version](https://img.shields.io/badge/Linux-6.1.187%20LTS-blue?logo=linux)
 ![KMI](https://img.shields.io/badge/KMI-android14--11--Zephyr-success?logo=android)
 ![Compiler](https://img.shields.io/badge/Compiler-Neutron%20Clang%2024.0.0%20%2B%20ThinLTO-purple?logo=llvm)
 ![Builder](https://img.shields.io/badge/Builder-kucingbalap1644%40ZephyrCI-orange)
@@ -20,7 +20,7 @@
 ## ✨ Key Features & Enhancements
 
 ### 🔥 CPU, Scheduler, & Toolchain
-- **Upstream Linux 6.1.190 LTS Core:** Fully synced to upstream Linux 6.1.190 LTS with verified Android Common Kernel (ACK) fixups and MediaTek compatibility (aligned with SAGA architecture).
+- **Upstream Linux 6.1.187 LTS Core:** Fully synced to upstream Linux 6.1.187 LTS with verified Android Common Kernel (ACK) fixups and MediaTek compatibility (aligned with SAGA architecture).
 - **Power-Efficient Workqueues (`CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y`):** Shifts workqueues to energy-efficient CPU cores when idle, reducing background battery drain significantly.
 - **BORE CPU Scheduler (`v6.8.0-rc1`):** *Burst-Oriented Response Enhancer* (`kernel.sched_bore = 1`) for ultra-responsive UI rendering, low touch latency, and smooth multitasking under heavy load.
 - **Neutron Clang `24.0.0git` + LLD `24.0.0`:** Configurable Link-Time Optimization supporting **ThinLTO (`CONFIG_LTO_CLANG_THIN=y`)**, **FullLTO (`CONFIG_LTO_CLANG_FULL=y`)**, or **NoLTO (`CONFIG_LTO_NONE=y`)**, paired with **Clang Control Flow Integrity (`CONFIG_CFI_CLANG=y`)** and persistent **`ccache`** compiler caching.
