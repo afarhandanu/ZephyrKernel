@@ -494,6 +494,12 @@ jobs:
             (cd release_assets && sha256sum *.zip)
             echo "\`\`\`"
           } > release_notes.md
+
+          BUILD_LTOS="${{ needs.setup-matrix.outputs.ltos }}" \
+          BUILD_VARIANTS="${{ needs.setup-matrix.outputs.variants }}" \
+          KERNEL_VER="6.1.187" \
+          python3 scripts/generate_release_notes.py --append
+
           gh release create "$TAG" release_assets/*.zip \
             --repo "${{ github.repository }}" \
             --title "$TITLE" \

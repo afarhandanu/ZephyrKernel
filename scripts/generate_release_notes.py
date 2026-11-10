@@ -4,6 +4,7 @@ import sys
 import glob
 import subprocess
 
+
 def get_susfs_version() -> str:
     for header_candidate in [
         "kernel/include/linux/susfs.h",
@@ -38,28 +39,12 @@ def main():
     variants = os.environ.get("BUILD_VARIANTS", "finasu")
     kernel_ver = os.environ.get("KERNEL_VER", "6.1.187")
     susfs_ver = get_susfs_version()
+    is_append = "--append" in sys.argv or os.environ.get("APPEND_RELEASE_NOTES") == "1"
 
-    notes = f"""# ⚡ ZephyrKernel GKI 2.0 — `android14-6.1-Zephyr`
-**High-performance, ultra-responsive, KMI-compliant Android Generic Kernel Image (GKI 2.0)**
-*Built for Universal Android 14 GKI 6.1 devices (Tested on POCO X7 / Redmi Note 14 Pro 5G `malachite` — MT6878).*
-
+    details = f"""
 ---
 
-### 📋 Release & Build Metadata
-
-| Attribute | Specification |
-| :--- | :--- |
-| **Linux Kernel Base** | `Linux {kernel_ver} LTS (Upstream Stable Sync)` |
-| **Kernel Branding** | `6.1.x-android14-11-Zephyr` |
-| **Target Compatibility** | `Universal Android 14 GKI 6.1 (Tested: POCO X7 / Redmi Note 14 Pro 5G)` |
-| **Architecture** | `ARM64 (aarch64) GKI 2.0` |
-| **Builder / Host** | `kucingbalap1644@ZephyrCI` |
-| **Compiler Toolchain** | `Neutron Clang 24.0.0git + LLD 24.0.0 (ccache enabled)` |
-| **LTO Optimization Modes** | `{ltos}` |
-| **Root Solutions Built** | `{variants}` |
-| **KMI ABI Status** | `100% Android 14 KMI Compliant (0 broken symbols)` |
-
----
+## 📖 Detailed Changelog & System Architecture
 
 ### 🛡️ Linux 6.1.187 ➔ {kernel_ver} LTS Upstream Sync & Security CVE Backports
 
@@ -128,6 +113,8 @@ def main():
 
 - **NTSYNC (`/dev/ntsync`):**
   - Direct Windows NT synchronization primitive driver for native high-performance gaming in Wine / Box64 / Winlator / Mobox.
+- **Re:Kernel (`Port 22`):**
+  - Built-in Netlink server (`/proc/rekernel/22`) monitoring Binder transactions and signals to frozen apps for instant wakeups with Millet / NoActive / Scene / Thanox.
 - **Gamepad Force Feedback:**
   - Full rumble and trigger feedback support for PlayStation 5 DualSense, PS4 DualShock 4, and Xbox One / Series wireless controllers.
 - **Storage Subsystem:** Mainline UFS WriteBooster catch-up and F2FS read extent cache locking optimizations.
@@ -152,13 +139,35 @@ def main():
 2. Flash using **Kernel Flasher**, **Franco Kernel Manager (FKM)**, or via Custom Recovery (**TWRP / OrangeFox**).
 3. If using KernelSU / FinaSU / SukiSU / SuSFS, install the corresponding manager APK after the first boot.
 4. Reboot and enjoy the Zephyr experience!
+"""
+
+    if is_append:
+        with open("release_notes.md", "a", encoding="utf-8") as f:
+            f.write(details)
+        print("Appended detailed release notes to release_notes.md successfully!")
+        return
+
+    header = f"""# ⚡ ZephyrKernel GKI 2.0 — `android14-6.1-Zephyr`
+**High-performance, ultra-responsive, KMI-compliant Android Generic Kernel Image (GKI 2.0)**
+*Built for Universal Android 14 GKI 6.1 devices (Tested on POCO X7 / Redmi Note 14 Pro 5G `malachite` — MT6878).*
 
 ---
 
-### 📦 SHA-256 Checksums
-```text
+### 📋 Release & Build Metadata
+
+| Attribute | Specification |
+| :--- | :--- |
+| **Linux Kernel Base** | `Linux {kernel_ver} LTS (Upstream Stable Sync)` |
+| **Kernel Branding** | `6.1.x-android14-11-Zephyr` |
+| **Target Compatibility** | `Universal Android 14 GKI 6.1 (Tested: POCO X7 / Redmi Note 14 Pro 5G)` |
+| **Architecture** | `ARM64 (aarch64) GKI 2.0` |
+| **Builder / Host** | `kucingbalap1644@ZephyrCI` |
+| **Compiler Toolchain** | `Neutron Clang 24.0.0git + LLD 24.0.0 (ccache enabled)` |
+| **LTO Optimization Modes** | `{ltos}` |
+| **Root Solutions Built** | `{variants}` |
+| **KMI ABI Status** | `100% Android 14 KMI Compliant (0 broken symbols)` |
 """
-    # Calculate checksums if release_assets directory exists
+    checksums = "\n---\n\n### 📦 SHA-256 Checksums\n```text\n"
     asset_dir = "release_assets"
     if os.path.exists(asset_dir):
         zips = sorted(glob.glob(os.path.join(asset_dir, "*.zip")))
@@ -166,20 +175,20 @@ def main():
             for z in zips:
                 try:
                     res = subprocess.run(["sha256sum", z], capture_output=True, text=True, check=True)
-                    notes += res.stdout.replace(f"{asset_dir}/", "")
+                    checksums += res.stdout.replace(f"{asset_dir}/", "")
                 except Exception:
                     pass
         else:
-            notes += "(No zip files found)\n"
+            checksums += "(No zip files found)\n"
     else:
-        notes += "(release_assets directory not present)\n"
-
-    notes += "```\n"
+        checksums += "(release_assets directory not present)\n"
+    checksums += "```\n"
 
     with open("release_notes.md", "w", encoding="utf-8") as f:
-        f.write(notes)
+        f.write(header + details + checksums)
 
     print("Generated release_notes.md successfully!")
+
 
 if __name__ == "__main__":
     main()
