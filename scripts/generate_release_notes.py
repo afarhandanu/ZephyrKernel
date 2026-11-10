@@ -61,17 +61,14 @@ def main():
 
 ### 🧠 Advanced Memory Management & ZRAM Compression
 
-- **le9uo v1.15 Low-Memory Working Set Protection:**
-  - Real-time anonymous and file-backed page protection (`vm.workingset_protection = 1`, `anon_min_ratio = 5`, `clean_min_ratio = 5`).
-  - Bypasses MGLRU for ZRAM swap space, preventing background app kills without causing system UI freezes.
+- **Multi-Gen LRU (MGLRU `CONFIG_LRU_GEN_ENABLED=y`):**
+  - High-performance page reclamation optimized natively for Android 14 multitasking and ZRAM swapping.
 - **Modern LZ4 v1.10.0 (ARM64 NEON Assembly):**
   - Fully vector-accelerated compression/decompression routines for fast ZRAM read/write cycles.
 - **ZSTD v1.5.7 (Linux 6.15 Backport):**
   - Backported from Linux 6.15 mainline for state-of-the-art compression ratio on RAM-heavy multitasking.
 - **LZ4K & LZ4KD High-Throughput Engines:**
   - Dedicated fast-path algorithms for compressed memory pages.
-- **kcompressd v0.5 Daemon:**
-  - Asynchronous background page compression daemon ensuring constant free memory pool availability.
 - **Memory Module Overrides:** Custom module blacklist overrides for `lzo`, `lzo_rle`, `zram`, and `zsmalloc`.
 
 ---
@@ -100,8 +97,6 @@ def main():
 
 - **NTSYNC (`/dev/ntsync`):**
   - Direct Windows NT synchronization primitive driver for native high-performance gaming in Wine / Box64 / Winlator / Mobox.
-- **Re:Kernel (`Port 22`):**
-  - Built-in Netlink server (`/proc/rekernel/22`) monitoring Binder transactions and signals to frozen apps for instant wakeups with Millet / NoActive / Scene / Thanox.
 - **Gamepad Force Feedback:**
   - Full rumble and trigger feedback support for PlayStation 5 DualSense, PS4 DualShock 4, and Xbox One / Series wireless controllers.
 - **Storage Subsystem:** Mainline UFS WriteBooster catch-up and F2FS read extent cache locking optimizations.

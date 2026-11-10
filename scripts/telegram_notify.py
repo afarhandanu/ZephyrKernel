@@ -104,12 +104,10 @@ rich_markdown = f"""<tg-slideshow>
 <tr><td>BBRv3</td></tr>
 <tr><td>BBG</td></tr>
 <tr><td>WireGuard</td></tr>
-<tr><td>le9uo v1.15</td></tr>
-<tr><td>Kcompressd v0.5</td></tr>
+<tr><td>Multi-Gen LRU (MGLRU)</td></tr>
 <tr><td>Workqueue Catch-up</td></tr>
 <tr><td>Schedutil Catch-up</td></tr>
 <tr><td>UFS WriteBooster Catch-up</td></tr>
-<tr><td>Re:Kernel Port 22</td></tr>
 <tr><td>NTSYNC /dev/ntsync</td></tr>
 <tr><td>LZ4 v1.10.0 + ZSTD v1.5.7</td></tr>
 <tr><td>SYSVIPC Droidspaces</td></tr>
@@ -139,10 +137,9 @@ rich_markdown = f"""<tg-slideshow>
 
 - BORE (Burst-Oriented Response Enhancer) v6.8.0-rc1 (kernel.sched_bore = 1)
 - Power-Efficient Workqueues (CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y)
-- le9uo v1.15 Low-Memory Working Set Protection (MGLRU off for MediaTek)
+- Multi-Gen LRU (MGLRU enabled natively for Android 14)
 - LZ4 v1.10.0 ARM64 NEON + ZSTD v1.5.7 (from Linux 6.15)
 - LZ4K & LZ4KD high-throughput compression engines
-- kcompressd v0.5 asynchronous memory compression daemon
 - Google TCP BBRv3 + Google FQ Pacing boot enforcer
 - Multipath TCP (CONFIG_MPTCP=y) simultaneous WiFi + Cellular aggregation
 - CAKE Smart Queue Management (CONFIG_NET_SCH_CAKE=y)
