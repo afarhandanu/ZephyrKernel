@@ -52,7 +52,7 @@ index 68aabbdcb..ea0d72d47 100644
  }
  
 diff --git a/net/mptcp/mib.c b/net/mptcp/mib.c
-index fbac6f652..a7ea377dc 100644
+index fbac6f652..c88aaa5b3 100644
 --- a/net/mptcp/mib.c
 +++ b/net/mptcp/mib.c
 @@ -1,6 +1,7 @@
@@ -82,6 +82,15 @@ index fbac6f652..a7ea377dc 100644
  		free_percpu(mib);
  
  	return true;
+@@ -89,7 +93,7 @@ bool mptcp_mib_alloc(struct net *net)
+ void mptcp_seq_show(struct seq_file *seq)
+ {
+ 	unsigned long sum[ARRAY_SIZE(mptcp_snmp_list) - 1];
+-	struct net *net = seq->private;
++	__maybe_unused struct net *net = seq->private;
+ 	int i;
+ 
+ 	seq_puts(seq, "MPTcpExt:");
 @@ -99,9 +103,9 @@ void mptcp_seq_show(struct seq_file *seq)
  	seq_puts(seq, "\nMPTcpExt:");
  
