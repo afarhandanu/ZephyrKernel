@@ -26,7 +26,7 @@ on:
           - "all"
         default: "thin"
       enable_extra_features:
-        description: "Enable extra features (BORE, LZ4+ZSTD, LZ4KD, BBRv3, CAKE, TTL, NTSYNC, BBG)"
+        description: "Enable extra features (BORE, le9uo, LZ4+ZSTD, LZ4KD, Re:Kernel, BBRv3, CAKE, TTL, NTSYNC, BBG)"
         type: boolean
         required: true
         default: true
@@ -63,7 +63,6 @@ jobs:
             echo 'ltos=["${{ inputs.lto_mode }}"]' >> $GITHUB_OUTPUT
           fi
           echo "build_date=$(date +%Y%m%d_%H%M)" >> $GITHUB_OUTPUT
-
   build:
     name: "Build Zephyr (${{ matrix.variant }} | LTO: ${{ matrix.lto }})"
     needs: setup-matrix
@@ -84,7 +83,6 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential bc bison flex libssl-dev libelf-dev \
             zip curl git ccache python3 patch libncurses-dev zstd dwarves
-
       - name: Setup Swap Space & Tune Virtual Memory (Prevents FullLTO OOM)
         run: |
           sudo swapoff -a 2>/dev/null || true
@@ -97,7 +95,6 @@ jobs:
           sudo sysctl -w vm.swappiness=80
           echo "=== Memory & Swap Configuration ==="
           free -h
-
       - name: Restore Compiler Cache (ccache)
         uses: actions/cache@v4
         with:
@@ -107,52 +104,37 @@ jobs:
             zephyr-ccache-6.1-${{ matrix.lto }}-${{ matrix.variant }}-
             zephyr-ccache-6.1-${{ matrix.lto }}-
             zephyr-ccache-6.1-
-
       - name: Configure ccache
         run: |
           ccache -M 5G
           ccache -o compression=true
           ccache -z
-
-      - name: Clone Zephyr Kernel Source Tree (Linux 6.1.190 LTS)
+      - name: Clone Luminaire Kernel Source Tree
         run: |
           rm -rf kernel
-          echo "Cloning Zephyr Kernel base (SAGA 6.1.190 upgrade-190-v2)..."
-          git clone --depth=1 -b upgrade-190-v2 https://github.com/Andrews571/SAGA-Kernel-6.1.git kernel
-          echo "Applying swapops.h migration page lock fix (BUG_ON -> WARN_ON_ONCE)..."
-          sed -i 's/BUG_ON(!PageLocked(p));/WARN_ON_ONCE(!PageLocked(p));/' kernel/include/linux/swapops.h
-          grep -q "WARN_ON_ONCE(!PageLocked(p));" kernel/include/linux/swapops.h
-          echo "Applying OpenSSL 3 certs/extract-cert.c key_pass fix..."
-          sed -i 's/#ifdef USE_PKCS11_ENGINE/#ifndef OPENSSL_NO_ENGINE/' kernel/certs/extract-cert.c
-          grep -q "#ifndef OPENSSL_NO_ENGINE" kernel/certs/extract-cert.c
-
+          echo "Cloning Luminaire Kernel base (branch: android14-6.1-luminaire)..."
+          git clone --depth=1 -b android14-6.1-luminaire https://github.com/chainonyourdoor/LuminaireKernel-6.1.git kernel
       - name: Load Device Verified Working Config (zephyr_defconfig)
         run: |
           echo "Applying verified KMI-compatible config from device..."
           cp zephyr_defconfig kernel/arch/arm64/configs/gki_defconfig
-
-      - name: Apply KMI ABI Fixes & Core Addons (SYSVIPC KABI, Module CRC/Export Bypass, LZ4+ZSTD, LZ4KD, BBRv3, BORE, NTSYNC, BBG)
+      - name: Apply KMI ABI Fixes & Core Addons (SYSVIPC KABI, Module CRC/Export Bypass, LZ4+ZSTD, LZ4KD, BBRv3, BORE, le9uo, Re:Kernel, NTSYNC, BBG)
         run: |
           set -euo pipefail
           git clone --depth=1 https://github.com/WildKernels/kernel_patches.git wild_patches
           git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git sukisu_patch
           git clone --depth=1 https://github.com/dikafarabian/workbench.git workbench
-
           cd kernel
-
           echo "1. Applying SYSVIPC task_struct KABI padding fix (prevents +24 byte shift in task_struct)..."
           patch -p1 < ../wild_patches/common/droidspaces/fix_sysvipc_kabi_6_7_8.patch
-
           echo "2. Applying check_version() CRC bypass in kernel/module/version.c..."
           sed -i '/bad_version:/,/^}/ s/return 0;/return 1;/' kernel/module/version.c
           grep -A 5 "bad_version:" kernel/module/version.c | grep -q "return 1;"
-
           echo "2b. Removing GKI ABI protected exports & bypassing protected symbol restrictions (fixes WiFi/Bluetooth rfkill.ko & vendor_dlkm modules)..."
           rm -rf android/abi_gki_protected_exports_*
           sed -i 's/if (!mod->sig_ok && gki_is_module_protected_export(/if (0 \&\& !mod->sig_ok \&\& gki_is_module_protected_export(/' kernel/module/main.c
           sed -i 's/!gki_is_module_unprotected_symbol(name)/0/' kernel/module/main.c
           grep -q "if (0 && !mod->sig_ok && gki_is_module_protected_export(" kernel/module/main.c
-
           echo "3. Applying ZRAM LZ4K/LZ4KD & built-in module blacklist (lzo, lzo_rle, zram, zsmalloc)..."
           cp -r ../sukisu_patch/other/zram/lz4k/include/linux/* include/linux/
           cp -r ../sukisu_patch/other/zram/lz4k/lib/* lib/
@@ -162,28 +144,30 @@ jobs:
             sed -i '/obj-$(CONFIG_CRYPTO_LZ4HC) += lz4hc.o/a obj-$(CONFIG_CRYPTO_LZ4K) += lz4k.o\nobj-$(CONFIG_CRYPTO_LZ4KD) += lz4kd.o' crypto/Makefile
           fi
           grep -q "custom_module_blacklist" kernel/module/main.c
-
           echo "4. Applying KABI-compliant TCP BBRv3 congestion control + boot enforcer..."
-          patch -p1 --fuzz=3 < ../wild_patches/common/bbrv3/0001-net-tcp-backport-BBRv3-to-android14-6.1.patch
+          patch -p1 < ../wild_patches/common/bbrv3/0001-net-tcp-backport-BBRv3-to-android14-6.1.patch
           python3 ../workbench/kernel/patches/bbrv3/enforcer.py net/ipv4/tcp_cong.c
-
           echo "5. Applying NTSYNC synchronization primitive driver..."
           patch -p1 < ../wild_patches/common/ntsync/ntsync_base.patch
           patch -p1 < ../wild_patches/common/ntsync/ntsync_compat_android14-6.1.patch
-
           echo "6. Setting up Baseband Security Guard (BBG)..."
           curl -fsSL "https://raw.githubusercontent.com/vc-teahouse/Baseband-guard/main/setup.sh" | bash
           sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
-
           echo "7. Applying BORE CPU Scheduler (v6.8.0-rc1)..."
           patch -p1 --fuzz=3 < ../workbench/kernel/patches/bore/bore-v6.8.0-rc1.patch
-
-          echo "8. Applying Schedutil Catch-up, UFS WriteBooster Catch-up, & Workqueue Catch-up..."
+          echo "8. Applying le9uo Working Set Protection (v1.15)..."
+          patch -p1 --fuzz=3 < ../workbench/kernel/patches/le9uo/le9uo-v1.15.patch
+          echo "9. Applying Kcompressd (v0.5), Schedutil Catch-up, UFS WriteBooster Catch-up, & Workqueue Catch-up..."
+          patch -p1 --fuzz=3 < ../workbench/kernel/patches/kcompressd/kcompressd-v0.5.patch
           patch -p1 --fuzz=3 < ../workbench/kernel/patches/schedutil_catchup/schedutil_catchup.patch
           patch -p1 --fuzz=3 < ../workbench/kernel/patches/ufs_writebooster_catchup/ufs_writebooster_catchup.patch
           patch -p1 --fuzz=3 < ../workbench/kernel/patches/workqueue_catchup/workqueue_catchup.patch
-
-          echo "9. Applying LZ4 v1.10.0 (ARM64 NEON) + ZSTD v1.5.7 bump (lz4zstd)..."
+          echo "10. Integrating Re:Kernel (Binder/Signal Netlink server)..."
+          python3 ../workbench/kernel/addons/rekernel/inject.py .
+          grep -q "Re:Kernel" drivers/android/binder.c
+          grep -q "Re:Kernel" drivers/android/binder_alloc.c
+          grep -q "Re:Kernel" kernel/signal.c
+          echo "11. Applying LZ4 v1.10.0 (ARM64 NEON) + ZSTD v1.5.7 bump (lz4zstd)..."
           mkdir -p lib/lz4/lz4armv8
           curl -fsSL -o lib/lz4/lz4armv8/lz4armv8.S "https://raw.githubusercontent.com/mrcxlinux/kernel_patches/main/zram/lz4armv8.S"
           cp ../workbench/kernel/addons/lz4zstd/lz4accel.h ../workbench/kernel/addons/lz4zstd/lz4accel.c lib/lz4/lz4armv8/
@@ -216,34 +200,28 @@ jobs:
           rm -f lib/lz4/lz4armv8/*.rej
           sed -i 's#include <linux/unaligned.h>#include <asm/unaligned.h>#' lib/zstd/common/mem.h
           grep -q "ZSTD_VERSION_RELEASE  7" include/linux/zstd_lib.h
-
       - name: "Integrate Root Variant (${{ matrix.variant }}) & SUSFS Patches"
         if: matrix.variant != 'vanilla'
         run: |
           set -euo pipefail
           VARIANT="${{ matrix.variant }}"
           echo "Setting up Root Variant: $VARIANT with SUSFS..."
-
           SUSFS_BRANCH="gki-android14-6.1"
           SUSFS_REPO="https://gitlab.com/simonpunk/susfs4ksu.git"
           if [ "$VARIANT" = "ksunext" ]; then
             SUSFS_REPO="https://gitlab.com/pershoot/susfs4ksu.git"
             SUSFS_BRANCH="gki-android14-6.1-dev"
           fi
-
           echo "Cloning susfs4ksu ($SUSFS_REPO @ $SUSFS_BRANCH)..."
           git clone --depth=1 -b "$SUSFS_BRANCH" "$SUSFS_REPO" susfs || git clone --depth=1 -b gki-android14-6.1 https://gitlab.com/simonpunk/susfs4ksu.git susfs
           cp -r susfs/kernel_patches/fs/* kernel/fs/ 2>/dev/null || true
           cp -r susfs/kernel_patches/include/linux/* kernel/include/linux/ 2>/dev/null || true
-
           cd kernel
           echo "Patching SUSFS into kernel tree..."
           patch -p1 --fuzz=3 < ../susfs/kernel_patches/50_add_susfs_in_gki-android14-6.1.patch || true
-
           # Fix unused function warnings under strict Clang Werror
           sed -i 's/static struct cred \*susfs_switch_to_ksu_domain/static __maybe_unused struct cred \*susfs_switch_to_ksu_domain/' fs/susfs.c
           sed -i 's/static void susfs_restore_creds/static __maybe_unused void susfs_restore_creds/' fs/susfs.c
-
           if [ "$VARIANT" = "finasu" ]; then
             # Keep SUSFS_VERSION at v2.3.0 so FinaSU ksud recognizes the wire protocol as compatible/builtin
             sed -i 's/#define SUSFS_VERSION "v2.4.0"/#define SUSFS_VERSION "v2.3.0"/' include/linux/susfs.h
@@ -264,34 +242,27 @@ jobs:
               { print }
             ' FinaSU/kernel/Kbuild > FinaSU/kernel/Kbuild.new && mv FinaSU/kernel/Kbuild.new FinaSU/kernel/Kbuild
             ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_HOOK_TRACEPOINT -e KSU_DYNAMIC_MANAGER
-
           elif [ "$VARIANT" = "ksunext" ]; then
             curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/dev-susfs/kernel/setup.sh" | bash -s dev-susfs
             KSU_DIR="KernelSU-Next"
-
           elif [ "$VARIANT" = "sukisu" ]; then
             curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
             KSU_DIR="KernelSU"
             python3 ../workbench/kernel/ksu/variants/sukisu/fallthrough_compat.py "${KSU_DIR}/kernel/policy/allowlist.c" || true
             ./scripts/config --file arch/arm64/configs/gki_defconfig -e KPM
-
           elif [ "$VARIANT" = "bakasu" ]; then
             curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash -s main
             KSU_DIR="KernelSU"
-
           elif [ "$VARIANT" = "kowsu" ]; then
             curl -LSs "https://raw.githubusercontent.com/KOWX712/KernelSU/master/kernel/setup.sh" | bash -s master
             KSU_DIR="KernelSU"
             curl -LSs "https://raw.githubusercontent.com/dikafarabian/workbench/main/kernel/ksu/susfs/patches/10_enable_susfs_for_kowsu.patch" | (cd "$KSU_DIR" && patch -p1 --fuzz=3 --forward) || true
-
           elif [ "$VARIANT" = "ksu" ]; then
             curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
             KSU_DIR="KernelSU"
             (cd "$KSU_DIR" && patch -p1 --fuzz=3 --forward < ../../susfs/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch) || true
           fi
-
           python3 ../workbench/kernel/ksu/susfs/priority_uid_filter_compat.py "$KSU_DIR" include/linux/susfs.h fs/susfs.c || true
-
           echo "Enabling KSU & SUSFS in gki_defconfig..."
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS
@@ -305,14 +276,12 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_OPEN_REDIRECT
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_MAP
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_PRIORITY_UID_FILTER
-
       - name: Disable KSU for Vanilla Variant
         if: matrix.variant == 'vanilla'
         run: |
           cd kernel
           echo "Configuring Vanilla (Non-Root) build..."
           ./scripts/config --file arch/arm64/configs/gki_defconfig -d KSU -d KSU_SUSFS
-
       - name: Setup KMI-Compliant Custom Branding (.scmversion)
         run: |
           cd kernel
@@ -322,7 +291,6 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e LOCALVERSION_AUTO
           KVER=$(make -s kernelversion 2>/dev/null || echo "6.1.x")
           echo "KMI Version string locked to: ${KVER}$(cat .scmversion)"
-
       - name: Configure LTO Mode (${{ matrix.lto }})
         run: |
           cd kernel
@@ -336,7 +304,6 @@ jobs:
             echo "Setting LTO to None (NoLTO)..."
             ./scripts/config --file arch/arm64/configs/gki_defconfig -e LTO_NONE -d LTO_CLANG_THIN -d LTO_CLANG_FULL
           fi
-
       - name: Apply Safe Extra Features (Preserving KMI ABI)
         if: ${{ inputs.enable_extra_features }}
         run: |
@@ -368,17 +335,16 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e CRYPTO_LZ4K
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e CRYPTO_LZ4KD
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e ZRAM_DEF_COMP_LZ4KD
-
-          # 4. BORE CPU Scheduler & Multi-Gen LRU (MGLRU enabled, le9uo disabled for stability)
+          # 4. BORE CPU Scheduler & le9uo Working Set Protection (with MGLRU disabled to prevent bootloop)
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e SCHED_BORE
-          ./scripts/config --file arch/arm64/configs/gki_defconfig -e LRU_GEN
-          ./scripts/config --file arch/arm64/configs/gki_defconfig -e LRU_GEN_ENABLED
-          ./scripts/config --file arch/arm64/configs/gki_defconfig -d WORKINGSET_PROTECTION_ENABLED
-
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -d LRU_GEN_ENABLED
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e WORKINGSET_PROTECTION_ENABLED
+          ./scripts/config --file arch/arm64/configs/gki_defconfig --set-val ANON_MIN_RATIO 5
+          ./scripts/config --file arch/arm64/configs/gki_defconfig --set-val CLEAN_LOW_RATIO 0
+          ./scripts/config --file arch/arm64/configs/gki_defconfig --set-val CLEAN_MIN_RATIO 5
           # IMPORTANT: Keep SLUB_DEBUG=y and UBSAN disabled to preserve MediaTek KMI ABI!
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e SLUB_DEBUG
           ./scripts/config --file arch/arm64/configs/gki_defconfig -d UBSAN
-
       - name: Cache Neutron Clang Toolchain
         id: cache-clang
         uses: actions/cache@v4
@@ -400,11 +366,9 @@ jobs:
           echo "Extracting Neutron Clang..."
           tar -I zstd -xf neutron-clang.tar.zst
           rm -f neutron-clang.tar.zst
-
       - name: Add Toolchain to PATH
         run: |
           echo "${GITHUB_WORKSPACE}/toolchain/bin" >> $GITHUB_PATH
-
       - name: Compile GKI Kernel Image (with ccache & LTO wrapper)
         run: |
           echo "=== Compiler Version ==="
@@ -413,7 +377,6 @@ jobs:
           cd kernel
           export KBUILD_BUILD_USER="kucingbalap1644"
           export KBUILD_BUILD_HOST="ZephyrCI"
-
           EXTRA_MAKE_ARGS=""
           if [ "${{ matrix.lto }}" = "thin" ]; then
             mkdir -p /dev/shm/ldcache
@@ -439,16 +402,13 @@ jobs:
             EXTRA_MAKE_ARGS="LD=${PWD}/ld-wrapper HOSTLD=${PWD}/ld-wrapper"
             echo "FullLTO ld-wrapper enabled (threads: ${LD_JOBS})"
           fi
-
           echo "Generating gki_defconfig..."
           make -j$(nproc --all) O=out ARCH=arm64 CC="ccache clang" LLVM=1 LLVM_IAS=1 $EXTRA_MAKE_ARGS KBUILD_BUILD_USER="kucingbalap1644" KBUILD_BUILD_HOST="ZephyrCI" gki_defconfig
           
           echo "Compiling Kernel Image..."
           make -j$(nproc --all) O=out ARCH=arm64 CC="ccache clang" LLVM=1 LLVM_IAS=1 $EXTRA_MAKE_ARGS KBUILD_BUILD_USER="kucingbalap1644" KBUILD_BUILD_HOST="ZephyrCI" KCFLAGS="-Wno-unused-function -Wno-error" Image
-
           echo "=== ccache Statistics ==="
           ccache -s
-
       - name: Package AnyKernel3 Flashable ZIP
         run: |
           git clone https://github.com/chainonyourdoor/AnyKernel3-Luminaire.git --depth=1 anykernel
@@ -459,11 +419,10 @@ jobs:
           
           cd anykernel
           BUILD_DATE="${{ needs.setup-matrix.outputs.build_date }}"
-          KVER=$(make -s -C ../kernel kernelversion 2>/dev/null || echo "6.1.190")
+          KVER=$(make -s -C ../kernel kernelversion 2>/dev/null || echo "6.1.187")
           ZIP_NAME="Zephyr-GKI-${KVER}-${{ matrix.variant }}-${{ matrix.lto }}LTO-${BUILD_DATE}.zip"
           zip -r9 "../${ZIP_NAME}" * -x .git README.md *placeholder
           echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
-
       - name: Upload Kernel Artifact (${{ matrix.variant }} - ${{ matrix.lto }}LTO)
         uses: actions/upload-artifact@v4
         with:
@@ -488,28 +447,41 @@ jobs:
       - name: Create GitHub Release with All Variants & LTO Modes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BUILD_LTOS: ${{ needs.setup-matrix.outputs.ltos }}
-          BUILD_VARIANTS: ${{ needs.setup-matrix.outputs.variants }}
-          KERNEL_VER: "6.1.190"
         run: |
           BUILD_DATE="${{ needs.setup-matrix.outputs.build_date }}"
           TAG="v6.1-${BUILD_DATE}-${{ inputs.root_variant }}-${{ inputs.lto_mode }}LTO"
           TITLE="⚡ ZephyrKernel GKI 6.1 (Variants: ${{ inputs.root_variant }} | LTO: ${{ inputs.lto_mode }} | ${BUILD_DATE})"
-
-          python3 scripts/generate_release_notes.py
-
+          {
+            echo "## ⚡ ZephyrKernel GKI 2.0 — \`android14-11-Zephyr\`"
+            echo ""
+            echo "| Property | Value |"
+            echo "| :--- | :--- |"
+            echo "| **Branding** | \`6.1.x-android14-11-Zephyr\` |"
+            echo "| **Builder** | \`kucingbalap1644@ZephyrCI\` |"
+            echo "| **Toolchain** | \`Neutron Clang 24.0.0git + LLD 24.0.0 (ccache enabled)\` |"
+            echo "| **LTO Modes Built** | \`${{ needs.setup-matrix.outputs.ltos }}\` |"
+            echo "| **Root Variants Built** | \`${{ needs.setup-matrix.outputs.variants }}\` |"
+            echo "| **CPU Scheduler** | \`BORE v6.8.0-rc1 + Schedutil/Workqueue Catch-up\` |"
+            echo "| **Memory & ZRAM** | \`le9uo v1.15 (MGLRU Off) + LZ4 v1.10.0 NEON + ZSTD v1.5.7 + LZ4KD + Kcompressd v0.5\` |"
+            echo "| **Networking** | \`TCP BBRv3 (Boot Enforcer) + CAKE Qdisc + TTL/HL Bypass\` |"
+            echo "| **Addons & Security** | \`Re:Kernel (Port 22) + NTSYNC (/dev/ntsync) + SYSVIPC (KABI-safe) + BBG + Gamepad FF\` |"
+            echo ""
+            echo "### 📦 SHA-256 Checksums"
+            echo "\`\`\`text"
+            (cd release_assets && sha256sum *.zip)
+            echo "\`\`\`"
+          } > release_notes.md
           gh release create "$TAG" release_assets/*.zip \
             --repo "${{ github.repository }}" \
             --title "$TITLE" \
             --notes-file release_notes.md \
             --latest
-
       - name: Push Release & Flashable ZIPs to Telegram
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           RELEASE_URL: https://github.com/${{ github.repository }}/releases/tag/v6.1-${{ needs.setup-matrix.outputs.build_date }}-${{ inputs.root_variant }}-${{ inputs.lto_mode }}LTO
-          KERNEL_VER: "6.1.190"
+          KERNEL_VER: "6.1.187"
           LTO_MODE: ${{ inputs.lto_mode }}
           VARIANTS: ${{ inputs.root_variant }}
         run: |
