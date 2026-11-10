@@ -316,13 +316,22 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e IP_NF_TARGET_TTL
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e IP6_NF_TARGET_HL
           
-          # 2. CAKE Network Queue Discipline & BBRv3
+          # 2. CAKE Network Queue Discipline, BBRv3 & FQ Pacing
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e NET_SCH_CAKE
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e TCP_CONG_BBR3
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e DEFAULT_BBR3
           ./scripts/config --file arch/arm64/configs/gki_defconfig --set-str DEFAULT_TCP_CONG "bbr3"
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e NET_SCH_FQ
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e DEFAULT_FQ
+          ./scripts/config --file arch/arm64/configs/gki_defconfig --set-str DEFAULT_NET_SCH "fq"
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e NET_SCH_DEFAULT
+
+          # 2b. Multipath TCP (MPTCP - Simultaneous WiFi + Cellular Data)
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e MPTCP
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e INET_MPTCP_DIAG
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e MPTCP_IPV6
           
-          # 3. Gamepad & Controller Drivers + NTSYNC + ZRAM LZ4KD + BBG
+          # 3. Gamepad & Controller Drivers + NTSYNC + ZRAM LZ4KD + BBG + USB DAC Audio
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e HID_SONY
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e SONY_FF
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e HID_PLAYSTATION
@@ -335,6 +344,9 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e CRYPTO_LZ4K
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e CRYPTO_LZ4KD
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e ZRAM_DEF_COMP_LZ4KD
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e SND_USB_AUDIO
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e SND_USB_AUDIO_USE_MEDIA_CONTROLLER
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e WQ_POWER_EFFICIENT_DEFAULT
           # 4. BORE CPU Scheduler & le9uo Working Set Protection (with MGLRU disabled to prevent bootloop)
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e SCHED_BORE
           ./scripts/config --file arch/arm64/configs/gki_defconfig -d LRU_GEN_ENABLED
