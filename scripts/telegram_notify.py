@@ -132,7 +132,9 @@ rich_markdown = f"""<tg-slideshow>
 
 <table bordered>
 <tr><td>BORE v6.8.0-rc1</td></tr>
-<tr><td>BBRv3</td></tr>
+<tr><td>BBRv3 + FQ + CAKE Qdisc</td></tr>
+<tr><td>MPTCP (WiFi + Cell Aggregation)</td></tr>
+<tr><td>Bit-Perfect USB DAC Audio</td></tr>
 <tr><td>BBG</td></tr>
 <tr><td>WireGuard</td></tr>
 <tr><td>le9uo v1.15 (MGLRU Off)</td></tr>
@@ -140,6 +142,7 @@ rich_markdown = f"""<tg-slideshow>
 <tr><td>Schedutil Catch-up</td></tr>
 <tr><td>UFS WriteBooster Catch-up</td></tr>
 <tr><td>NTSYNC /dev/ntsync</td></tr>
+<tr><td>Re:Kernel Port 22</td></tr>
 <tr><td>LZ4 v1.10.0 + ZSTD v1.5.7</td></tr>
 <tr><td>SYSVIPC Droidspaces</td></tr>
 <tr><td>SUSFS {susfs_ver} Built-in</td></tr>

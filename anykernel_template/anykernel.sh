@@ -51,6 +51,11 @@ esac
 ui_print " "
 ui_print "  -> Flashing ZephyrKernel (GKI $kernel_version)..."
 $gki_supported || abort "  -> Non-GKI device, abort."
+ui_print "  • BORE v6.8.0-rc1 + Schedutil/Workqueue Catch-up"
+ui_print "  • TCP BBRv3 + FQ Pacing + CAKE Qdisc"
+ui_print "  • MPTCP (WiFi + Cell) + Bit-Perfect USB DAC"
+ui_print "  • NTSYNC (/dev/ntsync) + Re:Kernel Port 22"
+ui_print "  • LZ4 NEON + ZSTD v1.5.7 + LZ4KD + le9uo v1.15"
 
 # boot install
 split_boot

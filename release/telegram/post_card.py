@@ -55,11 +55,11 @@ def load_metas(stage_dir: str) -> list:
                 "kernel_source_repo": "ZephyrKernel",
                 "compiler_string": "Neutron Clang 24.0.0git + LLD 24.0.0 (ccache)",
                 "lto_mode": lto,
-                "addons": "bbg,bbrv3,bore,lz4kd,lz4zstd,ntsync,schedutil_catchup,ufs_writebooster_catchup,workqueue_catchup,droidspaces",
+                "addons": "bbg,bbrv3,bore,lz4kd,lz4zstd,ntsync,schedutil_catchup,ufs_writebooster_catchup,workqueue_catchup,droidspaces,mptcp,usbdac,rekernel,le9uo",
                 "skipped_addons": "",
-                "addon_versions": "bore=v6.8.0-rc1,lz4=v1.10.0,zstd=v1.5.7",
+                "addon_versions": "bore=v6.8.0-rc1,lz4=v1.10.0,zstd=v1.5.7,le9uo=v1.15",
                 "patch_versions": "",
-                "applied_patches": "bbg,bbrv3,bore,lz4kd,lz4zstd,ntsync,schedutil_catchup,ufs_writebooster_catchup,workqueue_catchup",
+                "applied_patches": "bbg,bbrv3,bore,lz4kd,lz4zstd,ntsync,schedutil_catchup,ufs_writebooster_catchup,workqueue_catchup,mptcp,usbdac,rekernel,le9uo",
                 "skipped_patches": ""
             }
         meta["zip_path"] = path
