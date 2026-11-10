@@ -1,0 +1,138 @@
+diff --git a/include/net/netns/mib.h b/include/net/netns/mib.h
+index 7e373664b..61f1acd57 100644
+--- a/include/net/netns/mib.h
++++ b/include/net/netns/mib.h
+@@ -24,9 +24,7 @@ struct netns_mib {
+ #if IS_ENABLED(CONFIG_TLS)
+ 	DEFINE_SNMP_STAT(struct linux_tls_mib, tls_statistics);
+ #endif
+-#ifdef CONFIG_MPTCP
+-	DEFINE_SNMP_STAT(struct mptcp_mib, mptcp_statistics);
+-#endif
++/* CONFIG_MPTCP mptcp_statistics relocated to preserve struct netns_mib layout */
+ 
+ 	DEFINE_SNMP_STAT(struct udp_mib, udplite_statistics);
+ #if IS_ENABLED(CONFIG_IPV6)
+diff --git a/include/net/sock.h b/include/net/sock.h
+index c519edd72..955358dab 100644
+--- a/include/net/sock.h
++++ b/include/net/sock.h
+@@ -1343,10 +1343,6 @@ struct proto {
+ 	unsigned int		inuse_idx;
+ #endif
+ 
+-#if IS_ENABLED(CONFIG_MPTCP)
+-	int			(*forward_alloc_get)(const struct sock *sk);
+-#endif
+-
+ 	bool			(*stream_memory_free)(const struct sock *sk, int wake);
+ 	bool			(*sock_is_readable)(struct sock *sk);
+ 	/* Memory pressure */
+@@ -1401,6 +1397,9 @@ struct proto {
+ 	atomic_t		socks;
+ #endif
+ 	int			(*diag_destroy)(struct sock *sk, int err);
++#if IS_ENABLED(CONFIG_MPTCP)
++	int			(*forward_alloc_get)(const struct sock *sk);
++#endif
+ } __randomize_layout;
+ 
+ int proto_register(struct proto *prot, int alloc_slab);
+diff --git a/net/ipv4/af_inet.c b/net/ipv4/af_inet.c
+index 68aabbdcb..ea0d72d47 100644
+--- a/net/ipv4/af_inet.c
++++ b/net/ipv4/af_inet.c
+@@ -1826,7 +1826,7 @@ static __net_exit void ipv4_mib_exit_net(struct net *net)
+ 	free_percpu(net->mib.tcp_statistics);
+ #ifdef CONFIG_MPTCP
+ 	/* allocated on demand, see mptcp_init_sock() */
+-	free_percpu(net->mib.mptcp_statistics);
++	/* mptcp_stats_global is global for lifetime */
+ #endif
+ }
+ 
+diff --git a/net/mptcp/mib.c b/net/mptcp/mib.c
+index fbac6f652..a7ea377dc 100644
+--- a/net/mptcp/mib.c
++++ b/net/mptcp/mib.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ 
+ #include <linux/seq_file.h>
++#include <linux/export.h>
+ #include <net/ip.h>
+ #include <net/mptcp.h>
+ #include <net/snmp.h>
+@@ -73,6 +74,9 @@ static const struct snmp_mib mptcp_snmp_list[] = {
+  * These are allocated when the first mptcp socket is created so
+  * we do not waste percpu memory if mptcp isn't in use.
+  */
++struct mptcp_mib __percpu *mptcp_stats_global;
++EXPORT_SYMBOL_GPL(mptcp_stats_global);
++
+ bool mptcp_mib_alloc(struct net *net)
+ {
+ 	struct mptcp_mib __percpu *mib = alloc_percpu(struct mptcp_mib);
+@@ -80,7 +84,7 @@ bool mptcp_mib_alloc(struct net *net)
+ 	if (!mib)
+ 		return false;
+ 
+-	if (cmpxchg(&net->mib.mptcp_statistics, NULL, mib))
++	if (cmpxchg(&mptcp_stats_global, NULL, mib))
+ 		free_percpu(mib);
+ 
+ 	return true;
+@@ -99,9 +103,9 @@ void mptcp_seq_show(struct seq_file *seq)
+ 	seq_puts(seq, "\nMPTcpExt:");
+ 
+ 	memset(sum, 0, sizeof(sum));
+-	if (net->mib.mptcp_statistics)
++	if (mptcp_stats_global)
+ 		snmp_get_cpu_field_batch(sum, mptcp_snmp_list,
+-					 net->mib.mptcp_statistics);
++					 mptcp_stats_global);
+ 
+ 	for (i = 0; mptcp_snmp_list[i].name; i++)
+ 		seq_printf(seq, " %lu", sum[i]);
+diff --git a/net/mptcp/mib.h b/net/mptcp/mib.h
+index ff08d4114..0c43eb8f3 100644
+--- a/net/mptcp/mib.h
++++ b/net/mptcp/mib.h
+@@ -68,18 +68,20 @@ struct mptcp_mib {
+ 	unsigned long mibs[LINUX_MIB_MPTCP_MAX];
+ };
+ 
++extern struct mptcp_mib __percpu *mptcp_stats_global;
++
+ static inline void MPTCP_INC_STATS(struct net *net,
+ 				   enum linux_mptcp_mib_field field)
+ {
+-	if (likely(net->mib.mptcp_statistics))
+-		SNMP_INC_STATS(net->mib.mptcp_statistics, field);
++	if (likely(mptcp_stats_global))
++		SNMP_INC_STATS(mptcp_stats_global, field);
+ }
+ 
+ static inline void __MPTCP_INC_STATS(struct net *net,
+ 				     enum linux_mptcp_mib_field field)
+ {
+-	if (likely(net->mib.mptcp_statistics))
+-		__SNMP_INC_STATS(net->mib.mptcp_statistics, field);
++	if (likely(mptcp_stats_global))
++		__SNMP_INC_STATS(mptcp_stats_global, field);
+ }
+ 
+ bool mptcp_mib_alloc(struct net *net);
+diff --git a/net/mptcp/protocol.c b/net/mptcp/protocol.c
+index c3df888e7..1d6ade5e0 100644
+--- a/net/mptcp/protocol.c
++++ b/net/mptcp/protocol.c
+@@ -2958,7 +2958,7 @@ static int mptcp_init_sock(struct sock *sk)
+ 	if (!mptcp_is_enabled(net))
+ 		return -ENOPROTOOPT;
+ 
+-	if (unlikely(!net->mib.mptcp_statistics) && !mptcp_mib_alloc(net))
++	if (unlikely(!mptcp_stats_global) && !mptcp_mib_alloc(net))
+ 		return -ENOMEM;
+ 
+ 	ret = __mptcp_socket_create(mptcp_sk(sk));

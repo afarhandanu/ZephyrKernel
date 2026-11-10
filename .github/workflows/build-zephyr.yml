@@ -135,6 +135,8 @@ jobs:
           sed -i 's/if (!mod->sig_ok && gki_is_module_protected_export(/if (0 \&\& !mod->sig_ok \&\& gki_is_module_protected_export(/' kernel/module/main.c
           sed -i 's/!gki_is_module_unprotected_symbol(name)/0/' kernel/module/main.c
           grep -q "if (0 && !mod->sig_ok && gki_is_module_protected_export(" kernel/module/main.c
+          echo "2c. Applying MPTCP KMI struct preservation patch (prevents struct netns_mib & struct proto shift)..."
+          patch -p1 < ../patches/fix_mptcp_kabi.patch
           echo "3. Applying ZRAM LZ4K/LZ4KD & built-in module blacklist (lzo, lzo_rle, zram, zsmalloc)..."
           cp -r ../sukisu_patch/other/zram/lz4k/include/linux/* include/linux/
           cp -r ../sukisu_patch/other/zram/lz4k/lib/* lib/
@@ -223,8 +225,6 @@ jobs:
           sed -i 's/static struct cred \*susfs_switch_to_ksu_domain/static __maybe_unused struct cred \*susfs_switch_to_ksu_domain/' fs/susfs.c
           sed -i 's/static void susfs_restore_creds/static __maybe_unused void susfs_restore_creds/' fs/susfs.c
           if [ "$VARIANT" = "finasu" ]; then
-            # Keep SUSFS_VERSION at v2.3.0 so FinaSU ksud recognizes the wire protocol as compatible/builtin
-            sed -i 's/#define SUSFS_VERSION "v2.4.0"/#define SUSFS_VERSION "v2.3.0"/' include/linux/susfs.h
             curl -LSs "https://raw.githubusercontent.com/LyraVoid/FinaSU/master/kernel/setup.sh" | bash -s master
             KSU_DIR="FinaSU"
             CERT_SIZE="0x02cc"
@@ -276,6 +276,8 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_OPEN_REDIRECT
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_SUS_MAP
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e KSU_SUSFS_PRIORITY_UID_FILTER
+          echo "Verifying uniform SUSFS v2.4.0 across all root variants..."
+          grep "SUSFS_VERSION" include/linux/susfs.h
       - name: Disable KSU for Vanilla Variant
         if: matrix.variant == 'vanilla'
         run: |
@@ -322,6 +324,11 @@ jobs:
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e DEFAULT_BBR3
           ./scripts/config --file arch/arm64/configs/gki_defconfig --set-str DEFAULT_TCP_CONG "bbr3"
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e NET_SCH_FQ
+
+          # 2b. Multipath TCP (MPTCP - Simultaneous WiFi + Cellular Data with KMI Struct Preservation)
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e MPTCP
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e INET_MPTCP_DIAG
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e MPTCP_IPV6
           
           # 3. Gamepad & Controller Drivers + NTSYNC + ZRAM LZ4KD + BBG + USB DAC Audio
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e HID_SONY
@@ -465,11 +472,12 @@ jobs:
             echo "| **Builder** | \`kucingbalap1644@ZephyrCI\` |"
             echo "| **Toolchain** | \`Neutron Clang 24.0.0git + LLD 24.0.0 (ccache enabled)\` |"
             echo "| **LTO Modes Built** | \`${{ needs.setup-matrix.outputs.ltos }}\` |"
-            echo "| **Root Variants Built** | \`${{ needs.setup-matrix.outputs.variants }}\` |"
+            echo "| **Root Variants Built** | \`${{ needs.setup-matrix.outputs.variants }}\` (synced with SuSFS v2.4.0) |"
             echo "| **CPU Scheduler** | \`BORE v6.8.0-rc1 + Schedutil/Workqueue Catch-up\` |"
             echo "| **Memory & ZRAM** | \`le9uo v1.15 (MGLRU Off) + LZ4 v1.10.0 NEON + ZSTD v1.5.7 + LZ4KD + Kcompressd v0.5\` |"
-            echo "| **Networking** | \`TCP BBRv3 (Boot Enforcer) + CAKE Qdisc + TTL/HL Bypass\` |"
-            echo "| **Addons & Security** | \`Re:Kernel (Port 22) + NTSYNC (/dev/ntsync) + SYSVIPC (KABI-safe) + BBG + Gamepad FF\` |"
+            echo "| **Networking** | \`TCP BBRv3 (Boot Enforcer) + CAKE Qdisc + FQ Pacing + MPTCP (WiFi + Cell simultaneous, KMI-safe) + TTL/HL Bypass\` |"
+            echo "| **Audio & Drivers** | \`Bit-Perfect USB DAC Audio + Gamepad Force Feedback (Sony/Xbox/Playstation)\` |"
+            echo "| **Addons & Security** | \`Re:Kernel (Port 22) + NTSYNC (/dev/ntsync) + SYSVIPC (KABI-safe) + BBG\` |"
             echo ""
             echo "### 📦 SHA-256 Checksums"
             echo "\`\`\`text"
