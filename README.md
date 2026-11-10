@@ -56,7 +56,7 @@
   - **BakaSU:** Lightweight, performant root solution with full SUSFS integration.
   - **KowSU:** Enhanced root variant with native SUSFS cloaking support.
   - **Vanilla (`Non-Root`):** Clean, unrooted GKI 2.0 image without KernelSU or SUSFS (ideal for **Magisk**, **APatch**, or pure rootless setups).
-- **SUSFS (`v2.3.0 / v2.4.0 Built-in`):** Full built-in VFS root-hiding suite (`hide_mounts`, `avc_spoof`, `uname`, `cmdline`, `path`, `map`, `dynamic_kstat`, `full_clone`, `static_kstat`, `redirect`, `logging`) on all rooted variants.
+- **SUSFS (`v2.4.0 Built-in`):** Full built-in VFS root-hiding suite (`hide_mounts`, `avc_spoof`, `uname`, `cmdline`, `path`, `map`, `dynamic_kstat`, `full_clone`, `static_kstat`, `redirect`, `logging`) on all rooted variants.
 - **Full Vendor Module Compatibility:** Includes `check_version()` CRC bypass and GKI protected-exports bypass so all `/system_dlkm` and `/vendor_dlkm` modules (WiFi, Bluetooth, NFC, Camera, Audio SmartPA, GPU) load cleanly.
 
 ---
@@ -67,7 +67,7 @@
 2. Select **Build ZephyrKernel (GKI 6.1)** and click **Run workflow**.
 3. Choose your desired options (Branding is permanently locked to `6.1.x-android14-11-Zephyr` / `kucingbalap1644@ZephyrCI` and protected by owner verification):
    - **Root Variant (`root_variant`):**
-     - `finasu` — **FinaSU v1.5.0+** + SUSFS v2.3.0 Built-in (Default)
+     - `finasu` — **FinaSU v1.5.0+** + SUSFS v2.4.0 Built-in (Default)
      - `ksunext` — **KernelSU-Next (`dev-susfs`)** + SUSFS Built-in
      - `sukisu` — **SukiSU-Ultra (`builtin` + KPM)** + SUSFS Built-in
      - `ksu` — **Official KernelSU (`tiann`)** + SUSFS Built-in

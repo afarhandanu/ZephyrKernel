@@ -4,10 +4,40 @@ import sys
 import glob
 import subprocess
 
+def get_susfs_version() -> str:
+    for header_candidate in [
+        "kernel/include/linux/susfs.h",
+        "include/linux/susfs.h",
+        "susfs/kernel_patches/include/linux/susfs.h",
+    ]:
+        if os.path.exists(header_candidate):
+            try:
+                with open(header_candidate) as f:
+                    for line in f:
+                        if "#define SUSFS_VERSION" in line and '"' in line:
+                            return line.split('"')[1]
+            except Exception:
+                pass
+
+    try:
+        res = subprocess.run(
+            ["curl", "-fsSL", "--max-time", "5", "https://gitlab.com/simonpunk/susfs4ksu/-/raw/gki-android14-6.1/kernel_patches/include/linux/susfs.h"],
+            capture_output=True, text=True
+        )
+        for line in res.stdout.splitlines():
+            if "#define SUSFS_VERSION" in line and '"' in line:
+                return line.split('"')[1]
+    except Exception:
+        pass
+
+    return "v2.4.0"
+
+
 def main():
     ltos = os.environ.get("BUILD_LTOS", "thin")
     variants = os.environ.get("BUILD_VARIANTS", "finasu")
-    kernel_ver = os.environ.get("KERNEL_VER", "6.1.190")
+    kernel_ver = os.environ.get("KERNEL_VER", "6.1.187")
+    susfs_ver = get_susfs_version()
 
     notes = f"""# ⚡ ZephyrKernel GKI 2.0 — `android14-6.1-Zephyr`
 **High-performance, ultra-responsive, KMI-compliant Android Generic Kernel Image (GKI 2.0)**
@@ -61,8 +91,9 @@ def main():
 
 ### 🧠 Advanced Memory Management & ZRAM Compression
 
-- **Multi-Gen LRU (MGLRU `CONFIG_LRU_GEN_ENABLED=y`):**
-  - High-performance page reclamation optimized natively for Android 14 multitasking and ZRAM swapping.
+- **le9uo v1.15 Working Set Protection (MGLRU Disabled for MTK Stability):**
+  - MediaTek Dimensity 7300/MT6878 lockups are prevented by cleanly disabling problematic MGLRU at runtime and defconfig level.
+  - Active UI threads and foreground process working sets are safeguarded during intense memory pressure by le9uo.
 - **Modern LZ4 v1.10.0 (ARM64 NEON Assembly):**
   - Fully vector-accelerated compression/decompression routines for fast ZRAM read/write cycles.
 - **ZSTD v1.5.7 (Linux 6.15 Backport):**
@@ -101,14 +132,14 @@ def main():
   - Full rumble and trigger feedback support for PlayStation 5 DualSense, PS4 DualShock 4, and Xbox One / Series wireless controllers.
 - **Storage Subsystem:** Mainline UFS WriteBooster catch-up and F2FS read extent cache locking optimizations.
 - **Root Variants & Stealth Hiding:**
-  - `finasu`: FinaSU v1.5.0+ with dual-slot signature verification + SuSFS v2.3.0
-  - `ksunext`: KernelSU-Next with native SuSFS v2.3.0 integration
-  - `sukisu`: SukiSU-Ultra with Kernel Patch Module (`CONFIG_KPM=y`) + SuSFS v2.3.0
-  - `ksu`: Upstream official KernelSU with SuSFS v2.3.0
-  - `bakasu`: BakaSU root solution with SuSFS v2.3.0
-  - `kowsu`: KowSU root solution with SuSFS v2.3.0
+  - `finasu`: FinaSU v1.5.0+ with dual-slot signature verification + SuSFS {susfs_ver}
+  - `ksunext`: KernelSU-Next with native SuSFS {susfs_ver} integration
+  - `sukisu`: SukiSU-Ultra with Kernel Patch Module (`CONFIG_KPM=y`) + SuSFS {susfs_ver}
+  - `ksu`: Upstream official KernelSU with SuSFS {susfs_ver}
+  - `bakasu`: BakaSU root solution with SuSFS {susfs_ver}
+  - `kowsu`: KowSU root solution with SuSFS {susfs_ver}
   - `vanilla`: Clean, pure GKI 2.0 image without any root modifications (for Magisk, APatch, or rootless setups)
-  - **SuSFS v2.3.0 Built-in:** Full VFS root-hiding suite (`hide_mounts`, `avc_spoof`, `uname`, `cmdline`, `path`, `map`, `dynamic_kstat`, `full_clone`, `static_kstat`, `redirect`, `logging`) to pass Play Integrity (STRONG) and banking app security checks.
+  - **SuSFS {susfs_ver} Built-in:** Full VFS root-hiding suite (`hide_mounts`, `avc_spoof`, `uname`, `cmdline`, `path`, `map`, `dynamic_kstat`, `full_clone`, `static_kstat`, `redirect`, `logging`) to pass Play Integrity (STRONG) and banking app security checks.
 
 ---
 

@@ -43,11 +43,11 @@ def load_metas(stage_dir: str) -> list:
             elif "nonelto" in fname_lower:
                 lto = "NONE"
 
-            v_disp = "v1.5.0+" if var == "FINASU" else ("dev-susfs" if var == "KSUNEXT" else ("builtin" if var == "SUKISU" else "v2.3.0"))
+            v_disp = "v1.5.0+" if var == "FINASU" else ("dev-susfs" if var == "KSUNEXT" else ("builtin" if var == "SUKISU" else "v2.4.0"))
             meta = {
                 "variant": var_key,
                 "variant_version": v_disp,
-                "susfs_version": "v2.3.0" if is_susfs else "",
+                "susfs_version": "v2.4.0" if is_susfs else "",
                 "linux_ver": "6.1.187",
                 "kernel_version": "6.1",
                 "kernel_branch": "main",

@@ -40,6 +40,37 @@ banner_path = random.choice(banner_candidates) if banner_candidates else None
 if banner_path:
     print(f"[Telegram] Selected random cat meme banner: {os.path.basename(banner_path)}")
 
+# Resolve SUSFS version dynamically
+susfs_ver = "v2.4.0"
+for header_candidate in [
+    "kernel/include/linux/susfs.h",
+    "include/linux/susfs.h",
+    "susfs/kernel_patches/include/linux/susfs.h",
+]:
+    if os.path.exists(header_candidate):
+        try:
+            with open(header_candidate) as f:
+                for line in f:
+                    if "#define SUSFS_VERSION" in line and '"' in line:
+                        susfs_ver = line.split('"')[1]
+                        break
+            break
+        except Exception:
+            pass
+
+if susfs_ver == "v2.4.0" and not os.path.exists("kernel/include/linux/susfs.h"):
+    try:
+        res = subprocess.run(
+            ["curl", "-fsSL", "--max-time", "5", "https://gitlab.com/simonpunk/susfs4ksu/-/raw/gki-android14-6.1/kernel_patches/include/linux/susfs.h"],
+            capture_output=True, text=True
+        )
+        for line in res.stdout.splitlines():
+            if "#define SUSFS_VERSION" in line and '"' in line:
+                susfs_ver = line.split('"')[1]
+                break
+    except Exception:
+        pass
+
 # 3. Build Rich Message Payload
 rich_markdown = f"""<tg-slideshow>
 <img src="tg://photo?id=banner1" />
@@ -104,14 +135,14 @@ rich_markdown = f"""<tg-slideshow>
 <tr><td>BBRv3</td></tr>
 <tr><td>BBG</td></tr>
 <tr><td>WireGuard</td></tr>
-<tr><td>Multi-Gen LRU (MGLRU)</td></tr>
+<tr><td>le9uo v1.15 (MGLRU Off)</td></tr>
 <tr><td>Workqueue Catch-up</td></tr>
 <tr><td>Schedutil Catch-up</td></tr>
 <tr><td>UFS WriteBooster Catch-up</td></tr>
 <tr><td>NTSYNC /dev/ntsync</td></tr>
 <tr><td>LZ4 v1.10.0 + ZSTD v1.5.7</td></tr>
 <tr><td>SYSVIPC Droidspaces</td></tr>
-<tr><td>SUSFS v2.3.0 Built-in</td></tr>
+<tr><td>SUSFS {susfs_ver} Built-in</td></tr>
 </table>
 </details>
 </details>
@@ -137,7 +168,7 @@ rich_markdown = f"""<tg-slideshow>
 
 - BORE (Burst-Oriented Response Enhancer) v6.8.0-rc1 (kernel.sched_bore = 1)
 - Power-Efficient Workqueues (CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y)
-- Multi-Gen LRU (MGLRU enabled natively for Android 14)
+- le9uo v1.15 Working Set Protection (MGLRU disabled for MTK stability)
 - LZ4 v1.10.0 ARM64 NEON + ZSTD v1.5.7 (from Linux 6.15)
 - LZ4K & LZ4KD high-throughput compression engines
 - Google TCP BBRv3 + Google FQ Pacing boot enforcer
@@ -147,7 +178,7 @@ rich_markdown = f"""<tg-slideshow>
 - Bit-Perfect & Hi-Res USB DAC Audio bypass (CONFIG_SND_USB_AUDIO=y)
 - NTSYNC (/dev/ntsync) Windows NT sync driver for Wine/Winlator
 - Re:Kernel Port 22 + Gamepad Force Feedback + BBG
-- SuSFS v2.3.0 VFS root cloaking (Play Integrity STRONG / Banking hide)
+- SuSFS {susfs_ver} VFS root cloaking (Play Integrity STRONG / Banking hide)
 - Compatibility: Universal Android 14 GKI 6.1 (Tested on POCO X7 / Redmi Note 14 Pro 5G)
 </details>
 </details>
@@ -174,12 +205,12 @@ rich_markdown = f"""<tg-slideshow>
 <tr><td>MGLRU</td><td><tg-button type="disabled" style="danger">Disable</tg-button></td></tr>
 </table>
 
-<tg-button-row><tg-button type="url" style="primary" url="https://t.me/FinaSU/">FinaSU v1.5.0+ · SuSFS v2.3.0</tg-button></tg-button-row>
-<tg-button-row><tg-button type="url" style="primary" url="https://t.me/ksunext_ci/">KernelSU-Next · SuSFS v2.3.0</tg-button></tg-button-row>
-<tg-button-row><tg-button type="url" style="primary" url="https://t.me/Sukiksu/7121/">SukiSU-Ultra · SuSFS v2.3.0</tg-button></tg-button-row>
-<tg-button-row><tg-button type="url" style="primary" url="https://t.me/KernelSU_group/3234/">KernelSU · SuSFS v2.3.0</tg-button></tg-button-row>
-<tg-button-row><tg-button type="url" style="primary" url="https://t.me/BakaSU_Grp/4/">BakaSU · SuSFS v2.3.0</tg-button></tg-button-row>
-<tg-button-row><tg-button type="url" style="primary" url="https://t.me/kowsu_build/">KowSU · SuSFS v2.3.0</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/FinaSU/">FinaSU v1.5.0+ · SuSFS {susfs_ver}</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/ksunext_ci/">KernelSU-Next · SuSFS {susfs_ver}</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/Sukiksu/7121/">SukiSU-Ultra · SuSFS {susfs_ver}</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/KernelSU_group/3234/">KernelSU · SuSFS {susfs_ver}</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/BakaSU_Grp/4/">BakaSU · SuSFS {susfs_ver}</tg-button></tg-button-row>
+<tg-button-row><tg-button type="url" style="primary" url="https://t.me/kowsu_build/">KowSU · SuSFS {susfs_ver}</tg-button></tg-button-row>
 <tg-button-row><tg-button type="callback_data" data="vanilla" style="primary">Vanilla (Non-Root / Pure GKI)</tg-button></tg-button-row>
 
 <tg-button-row>
