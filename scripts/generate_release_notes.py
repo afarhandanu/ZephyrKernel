@@ -89,13 +89,17 @@ def main():
 
 ---
 
-### 🌐 Networking, Audio & Tethering
+### 🌐 Networking, Audio & Storage Subsystem
 
 - **Google TCP BBRv3 + Delayed-Work Boot Enforcer:**
   - Google's 3rd-generation Bottleneck Bandwidth and RTT congestion control set as default.
   - Reinforced by an active kernel daemon that overrides vendor init scripts from downgrading back to `cubic`.
-- **Google FQ Pacing (`CONFIG_NET_SCH_FQ=y` + `CONFIG_DEFAULT_NET_SCH="fq"`):**
-  - Pairs Fair Queue pacing directly with BBRv3 for zero packet loss and minimum bufferbloat.
+- **Google FQ Pacing Default (`CONFIG_NET_SCH_FQ=y` + `CONFIG_DEFAULT_NET_SCH="fq"`):**
+  - Sets Google Fair Queue pacing as the kernel default queue discipline (retiring legacy `pfifo_fast`), pairing directly with BBRv3 for zero packet drops, jitter elimination, and minimum bufferbloat.
+- **Built-in Gigabit USB LAN Ethernet Drivers (`CONFIG_USB_RTL8152=y` + `CONFIG_USB_NET_AX88179_178A=y`):**
+  - Native in-kernel support for Realtek RTL8152/RTL8153 and ASIX AX88179 USB-C Hub LAN adapters for instant plug-and-play wired Gigabit internet without missing vendor modules.
+- **Native Paragon NTFS3 Full Read/Write (`CONFIG_NTFS3_FS=y` + `CONFIG_NTFS3_LZX_XPRESS=y`):**
+  - Built-in kernel support for Windows NTFS external storage drives and flash drives via USB-C OTG with full read/write, compression, and POSIX ACL support without needing third-party mounter apps.
 - **Multipath TCP (MPTCP `CONFIG_MPTCP=y`):**
   - Enables simultaneous Wi-Fi and Cellular data aggregation for faster multi-socket downloads and seamless failover.
 - **CAKE Smart Queue Management (`CONFIG_NET_SCH_CAKE=y`):**

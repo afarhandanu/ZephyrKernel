@@ -132,8 +132,10 @@ rich_markdown = f"""<tg-slideshow>
 
 <table bordered>
 <tr><td>BORE v6.8.0-rc1</td></tr>
-<tr><td>BBRv3 + FQ + CAKE Qdisc</td></tr>
+<tr><td>BBRv3 + FQ Default (No pfifo) + CAKE</td></tr>
 <tr><td>MPTCP (WiFi + Cell Aggregation)</td></tr>
+<tr><td>Paragon NTFS3 R/W OTG</td></tr>
+<tr><td>Built-in USB Gigabit LAN</td></tr>
 <tr><td>Bit-Perfect USB DAC Audio</td></tr>
 <tr><td>BBG</td></tr>
 <tr><td>WireGuard</td></tr>
@@ -174,7 +176,9 @@ rich_markdown = f"""<tg-slideshow>
 - le9uo v1.15 Working Set Protection (MGLRU disabled for MTK stability)
 - LZ4 v1.10.0 ARM64 NEON + ZSTD v1.5.7 (from Linux 6.15)
 - LZ4K & LZ4KD high-throughput compression engines
-- Google TCP BBRv3 + Google FQ Pacing boot enforcer
+- Google TCP BBRv3 + Default FQ Pacing (legacy pfifo retired)
+- Built-in Gigabit USB LAN Ethernet (Realtek RTL8152 + ASIX AX88179)
+- Native Paragon NTFS3 Full R/W support for Windows USB OTG drives
 - Multipath TCP (CONFIG_MPTCP=y) simultaneous WiFi + Cellular aggregation
 - CAKE Smart Queue Management (CONFIG_NET_SCH_CAKE=y)
 - Netfilter TTL / HL hop-limit target bypass (unlimited hotspot tethering)

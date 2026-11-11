@@ -31,9 +31,11 @@
 - **LZ4 `v1.10.0` (ARM64 NEON Assembly) + ZSTD `v1.5.7` (Linux 6.15 Backport):** Hardware-accelerated compression/decompression across the kernel.
 - **ZRAM `LZ4K` & `LZ4KD` + `Kcompressd v0.5`:** Built-in ZRAM with `lz4`, `lz4hc`, `lz4k`, `lz4kd`, `zstd`, `lzo-rle`, `deflate` support, paired with `kcompressd` background compression daemon and vendor module conflict bypass.
 
-### 🌐 Networking, Audio, & Tethering
+### 🌐 Networking, Audio, Storage, & Tethering
 - **TCP BBRv3 (`bbr3`) + Boot Enforcer:** Google's 3rd-generation BBR congestion control set as default, reinforced by a delayed-work boot enforcer so vendor init scripts cannot revert it to `cubic`.
-- **Google FQ Pacing Pairing (`CONFIG_NET_SCH_FQ=y` + `CONFIG_DEFAULT_NET_SCH="fq"`):** Pairs Fair Queue pacing directly with BBRv3 for zero packet drops and minimum bufferbloat.
+- **Google FQ Pacing Default (`CONFIG_NET_SCH_FQ=y` + `CONFIG_DEFAULT_NET_SCH="fq"`):** Sets Google Fair Queue pacing as the kernel default queue discipline (retiring legacy `pfifo_fast`), pairing directly with BBRv3 for zero packet drops, jitter elimination, and minimum bufferbloat in online gaming.
+- **Built-in Gigabit USB LAN Ethernet Drivers (`CONFIG_USB_RTL8152=y` + `CONFIG_USB_NET_AX88179_178A=y`):** Native in-kernel support for Realtek RTL8152/RTL8153 and ASIX AX88179 USB-C Hub LAN adapters for instant plug-and-play wired Gigabit internet without missing vendor modules.
+- **Paragon NTFS3 Native Full Read/Write (`CONFIG_NTFS3_FS=y` + `CONFIG_NTFS3_LZX_XPRESS=y`):** Built-in kernel support for Windows NTFS external storage drives and flash drives via USB-C OTG with full read/write, compression, and POSIX ACL support without needing third-party mounter apps.
 - **Multipath TCP (`CONFIG_MPTCP=y`):** Simultaneous WiFi + Cellular data aggregation for ultra-fast downloads and seamless connection failover.
 - **TCP Fast Open (`CONFIG_INET_TCP_DIAG=y`):** Accelerates subsequent HTTP/HTTPS handshakes by transmitting data in SYN packets.
 - **Bit-Perfect & Hi-Res USB Audio (`CONFIG_SND_USB_AUDIO=y`):** Native hardware bypass support for external USB DACs (up to 32-bit / 768kHz and DSD).
